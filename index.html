@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Амигуруми — сегментация фото на детали</title>
+<style>
+  :root{
+    --bg:#F7F5F0; --card:#FFFFFF; --ink:#241F1A; --ink-2:#6B6459;
+    --line:#E4DFD5; --accent:#B5502C; --accent-bg:#F3E3DA;
+    --teal:#0F6E56; --teal-bg:#E1F5EE;
+    --blue:#185FA5; --blue-bg:#E6F1FB;
+    --amber:#854F0B; --amber-bg:#FAEEDA;
+    --coral:#993C1D; --coral-bg:#FAECE7;
+    --purple:#534AB7; --purple-bg:#EEEDFE;
+    --green:#2E7D32; --green-bg:#E7F5E8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Segoe UI',system-ui,sans-serif; padding:2rem 1rem;}
+  .wrap{max-width:640px; margin:0 auto;}
+  h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  h2{font-size:15px; font-weight:600; margin:1.5rem 0 0.75rem;}
+  .sub{color:var(--ink-2); font-size:14px; margin:0 0 1.75rem;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.25rem; margin-bottom:1.25rem;}
+  label{font-size:12px; color:var(--ink-2); display:block; margin-bottom:4px;}
+  input[type=number], input[type=text], input[type=file], select{width:100%; padding:8px 9px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:#fff; font-family:inherit;}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  button{cursor:pointer; border:none; border-radius:8px; padding:11px 16px; font-size:14px; font-weight:600; font-family:inherit;}
+  .btn-primary{background:var(--accent); color:#fff; width:100%;}
+  .btn-primary:disabled{background:#D8CFC2; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink); font-size:13px; padding:9px 14px;}
+  #preview{max-width:100%; max-height:220px; border-radius:10px; margin-top:10px; display:none;}
+  .status{font-size:13px; color:var(--ink-2); margin-top:10px; min-height:18px;}
+  .part{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
+  .ptop{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+  .pname-input{font-weight:600; font-size:14px; border:1px solid transparent; padding:4px 6px; border-radius:6px; max-width:160px;}
+  .pname-input:hover, .pname-input:focus{border-color:var(--line); outline:none;}
+  .badge-select{font-size:11px; padding:3px 8px; border-radius:6px; font-weight:600; border:none;}
+  .b-sphere{background:var(--teal-bg); color:var(--teal);}
+  .b-cylinder{background:var(--blue-bg); color:var(--blue);}
+  .b-disc{background:var(--amber-bg); color:var(--amber);}
+  .b-cone{background:var(--coral-bg); color:var(--coral);}
+  .b-oval{background:var(--purple-bg); color:var(--purple);}
+  .b-panel{background:var(--green-bg); color:var(--green);}
+  .pfields{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:10px;}
+  .pfield{width:88px;}
+  .pfield input{padding:6px 7px; font-size:12px;}
+  .pcount{width:56px;}
+  .pmeta{font-size:12px; color:var(--ink-2); margin-top:8px; display:flex; gap:14px; flex-wrap:wrap;}
+  .pmeta b{color:var(--ink); font-weight:600;}
+  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:12px;}
+  td{padding:5px 6px; border-top:1px solid var(--line);}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:1rem;}
+  .stat{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px;}
+  .stat .n{font-size:22px; font-weight:700;}
+  .stat .l{font-size:12px; color:var(--ink-2);}
+  .toggle{background:transparent; border:1px solid var(--line); font-size:11px; padding:4px 10px; margin-top:8px;}
+  .rm-btn{background:transparent; border:none; color:var(--ink-2); font-size:16px; padding:2px 6px;}
+  .note{font-size:12px; color:var(--ink-2); line-height:1.5;}
+  .deco{background:#fff; border:1px dashed var(--line); border-radius:12px; padding:10px 14px; margin-bottom:8px;}
+  .deco b{font-size:13px;}
+  .deco p{font-size:12px; color:var(--ink-2); margin:4px 0 0;}
+  .addrow{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Фото → детали для амигуруми</h1>
+  <p class="sub">Загрузите фото или эскиз игрушки — Claude предложит детали, вы сможете поправить каждую, а движок посчитает ряды.</p>
+
+  <div class="card">
+    <label for="file">Фото или эскиз изделия</label>
+    <input type="file" id="file" accept="image/*" />
+    <img id="preview" />
+
+    <div style="height:12px;"></div>
+    <div class="row">
+      <div>
+        <label for="height">Желаемый рост игрушки, см</label>
+        <input type="number" id="height" value="15" min="3" max="60" />
+      </div>
+      <div>
+        <label for="stg">Петель / рядов на 10 см</label>
+        <div style="display:flex; gap:6px;">
+          <input type="number" id="stg" value="16" />
+          <input type="number" id="rowg" value="14" />
+        </div>
+      </div>
+    </div>
+
+    <div style="height:14px;"></div>
+    <button class="btn-primary" id="analyze" disabled>Разобрать на детали</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="stats"></div>
+  <div id="parts"></div>
+
+  <div class="card">
+    <label style="margin-bottom:10px;">добавить деталь вручную</label>
+    <div class="addrow">
+      <input type="text" id="np-name" placeholder="название" />
+      <select id="np-type">
+        <option value="sphere">шар</option>
+        <option value="cylinder">цилиндр</option>
+        <option value="disc">диск</option>
+        <option value="cone">конус</option>
+        <option value="oval">овал</option>
+        <option value="panel">полотно (одежда)</option>
+      </select>
+    </div>
+    <button class="btn-ghost" id="add-part-btn" style="width:100%;">+ добавить</button>
+  </div>
+
+  <div id="decorations"></div>
+  <p class="note" id="footnote"></p>
+</div>
+
+<script>
+let imageBase64 = null, imageMediaType = null;
+let parts = [];
+let decorations = [];
+let openIdx = null;
+let idCounter = 1;
+
+const fileInput = document.getElementById('file');
+const preview = document.getElementById('preview');
+const analyzeBtn = document.getElementById('analyze');
+const statusEl = document.getElementById('status');
+
+function r2(x){ return Math.round((x||0)*100)/100; }
+
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if(!f) return;
+  imageMediaType = f.type;
+  const reader = new FileReader();
+  reader.onload = () => {
+    imageBase64 = reader.result.split(',')[1];
+    preview.src = reader.result;
+    preview.style.display = 'block';
+    analyzeBtn.disabled = false;
+  };
+  reader.readAsDataURL(f);
+});
+
+function incInfo(diameterCm, stPer10){
+  const stPerCm = stPer10/10;
+  const circumference = Math.PI*diameterCm;
+  let maxSt = Math.round((circumference*stPerCm)/6)*6;
+  if(maxSt<6) maxSt=6;
+  return {maxSt, incRounds: maxSt/6};
+}
+function incText(i){ const r=i-2; return r<=0 ? '(прибавка) x6' : '('+r+' сбн, прибавка) x6'; }
+function decText(i){ const r=i-2; return r<=0 ? '(убавка) x6' : '('+r+' сбн, убавка) x6'; }
+
+function computeOval(lengthCm, widthCm, stg, rowg){
+  const stPerCm = stg/10;
+  const straightSts = Math.max(2, Math.round((lengthCm - widthCm) * stPerCm));
+  const widthRounds = Math.max(1, Math.round((widthCm * stPerCm) / 4));
+  const rounds = []; let n=1;
+  let count = straightSts*2 + 6;
+  rounds.push({n:n++, text:'цепочка из '+(straightSts+1)+' возд.п.; по кругу: '+straightSts+' сбн, 3 сбн в последнюю петлю, '+straightSts+' сбн по другой стороне, 3 сбн в первую петлю ('+count+')'});
+  for(let i=1;i<widthRounds;i++){
+    count += 4;
+    rounds.push({n:n++, text:'прибавка, '+straightSts+' сбн, прибавка x2, '+straightSts+' сбн, прибавка ('+count+')'});
+  }
+  return {rounds, maxSt:count, total:rounds.length, height:r2(widthCm)};
+}
+
+function computePanel(widthCm, heightCm, stg, rowg){
+  const stPerCm = stg/10, rowPerCm = rowg/10;
+  const widthSts = Math.max(2, Math.round(widthCm*stPerCm));
+  const heightRows = Math.max(1, Math.round(heightCm*rowPerCm));
+  const rounds = []; let n=1;
+  rounds.push({n:n++, text:'цепочка из '+(widthSts+1)+' возд.п.'});
+  for(let r=0;r<heightRows;r++) rounds.push({n:n++, text:'ряд сбн по '+widthSts+' петель, повернуть вязание'});
+  return {rounds, maxSt:widthSts, total:rounds.length, height:r2(heightCm)};
+}
+
+function computePart(p, stg, rowg){
+  if(p.type==='oval') return computeOval(p.length||3, p.width||1.5, stg, rowg);
+  if(p.type==='panel') return computePanel(p.length||3, p.width||3, stg, rowg);
+
+  const info = incInfo(p.diam||3, stg);
+  const maxSt = info.maxSt, incRounds = info.incRounds;
+  const rowPerCm = rowg/10;
+  const rounds = []; let n=1;
+  rounds.push({n:n++, text:'6 сбн в кольцо амигуруми (6)'});
+  for(let i=2;i<=incRounds;i++) rounds.push({n:n++, text:incText(i)+' ('+(6*i)+')'});
+  if(p.type==='disc') return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+
+  const straight = Math.max(0, Math.round((p.extra||0)*rowPerCm));
+  for(let j=0;j<straight;j++) rounds.push({n:n++, text:'сбн по кругу ('+maxSt+')'});
+  if(p.type==='cylinder') return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+
+  if(p.type==='sphere'){ for(let i=incRounds;i>=2;i--) rounds.push({n:n++, text:decText(i)+' ('+(6*(i-1))+')'}); }
+  else if(p.type==='cone'){ for(let i=incRounds;i>=2;i-=2) rounds.push({n:n++, text:decText(i)+' ('+(6*(i-1))+')'}); }
+  return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+}
+
+const typeLabel = {sphere:'шар', cylinder:'цилиндр', disc:'диск', cone:'конус', oval:'овал', panel:'полотно'};
+const typeFields = {
+  sphere:  [{key:'diam', label:'диаметр, см'}, {key:'extra', label:'прямая часть, см'}],
+  cylinder:[{key:'diam', label:'диаметр, см'}, {key:'extra', label:'длина, см'}],
+  disc:    [{key:'diam', label:'диаметр, см'}],
+  cone:    [{key:'diam', label:'диаметр, см'}, {key:'extra', label:'сужение, см'}],
+  oval:    [{key:'length', label:'длина, см'}, {key:'width', label:'ширина, см'}],
+  panel:   [{key:'length', label:'ширина, см'}, {key:'width', label:'высота, см'}]
+};
+
+function renderParts(){
+  const stg = parseFloat(document.getElementById('stg').value)||16;
+  const rowg = parseFloat(document.getElementById('rowg').value)||14;
+  const box = document.getElementById('parts');
+  box.innerHTML = '';
+  let totalRounds=0, totalPieces=0;
+
+  parts.forEach((p, idx) => {
+    const res = computePart(p, stg, rowg);
+    totalRounds += res.total * p.count;
+    totalPieces += p.count;
+
+    const fields = typeFields[p.type];
+    const fieldsHtml = fields.map(function(f){
+      return '<div class="pfield"><label>'+f.label+'</label><input type="number" step="0.5" min="0.5" data-field="'+f.key+'" data-idx="'+idx+'" value="'+r2(p[f.key])+'"></div>';
+    }).join('');
+
+    const el = document.createElement('div');
+    el.className = 'part';
+    const rowsHtml = res.rounds.map(function(r){ return '<tr><td style="color:var(--ink-2);width:30px;">'+r.n+'</td><td>'+r.text+'</td></tr>'; }).join('');
+    const typeOptions = Object.keys(typeLabel).map(function(t){ return '<option value="'+t+'"'+(t===p.type?' selected':'')+'>'+typeLabel[t]+'</option>'; }).join('');
+    el.innerHTML =
+      '<div class="ptop">'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
+          '<select class="badge-select b-'+p.type+'" data-idx="'+idx+'" data-field="type">'+typeOptions+'</select>'+
+          '<input class="pname-input" type="text" data-idx="'+idx+'" data-field="name" value="'+p.name+'">'+
+          '<div class="pfield pcount"><label>шт</label><input type="number" min="1" data-field="count" data-idx="'+idx+'" value="'+p.count+'"></div>'+
+        '</div>'+
+        '<button class="rm-btn" data-remove="'+idx+'" aria-label="удалить">×</button>'+
+      '</div>'+
+      '<div class="pfields">'+fieldsHtml+'</div>'+
+      '<div class="pmeta">'+
+        '<span>рядов: <b>'+res.total+'</b></span>'+
+        '<span>петель макс: <b>'+res.maxSt+'</b></span>'+
+      '</div>'+
+      '<button class="toggle" data-i="'+idx+'">'+(openIdx===idx?'скрыть ряды':'показать ряды')+'</button>'+
+      (openIdx===idx ? '<table><tbody>'+rowsHtml+'</tbody></table>' : '');
+    box.appendChild(el);
+  });
+
+  box.querySelectorAll('[data-i]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openIdx = openIdx===parseInt(btn.dataset.i) ? null : parseInt(btn.dataset.i); renderParts(); });
+  });
+  box.querySelectorAll('[data-remove]').forEach(function(btn){
+    btn.addEventListener('click', function(){ parts.splice(parseInt(btn.dataset.remove),1); renderParts(); });
+  });
+  box.querySelectorAll('[data-field]').forEach(function(inp){
+    inp.addEventListener('change', function(){
+      const idx = parseInt(inp.dataset.idx), field = inp.dataset.field;
+      if(field==='name') parts[idx].name = inp.value;
+      else if(field==='type') parts[idx].type = inp.value;
+      else parts[idx][field] = r2(parseFloat(inp.value));
+      renderParts();
+    });
+  });
+
+  document.getElementById('stats').innerHTML = parts.length ? (
+    '<div class="stats">'+
+      '<div class="stat"><div class="n">'+totalPieces+'</div><div class="l">деталей всего</div></div>'+
+      '<div class="stat"><div class="n">'+parts.length+'</div><div class="l">видов деталей</div></div>'+
+      '<div class="stat"><div class="n">'+totalRounds+'</div><div class="l">рядов по игрушке</div></div>'+
+    '</div>') : '';
+
+  document.getElementById('decorations').innerHTML = decorations.length ?
+    '<h2>декоративные элементы (без расчёта рядов)</h2>' +
+    decorations.map(function(d){ return '<div class="deco"><b>'+d.name+'</b><p>'+d.instruction+'</p></div>'; }).join('')
+    : '';
+}
+
+['stg','rowg'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderParts); });
+
+document.getElementById('add-part-btn').addEventListener('click', function(){
+  const name = document.getElementById('np-name').value.trim() || 'деталь';
+  const type = document.getElementById('np-type').value;
+  parts.push({id:idCounter++, name:name, type:type, count:1, diam:3, extra:0, length:3, width:1.5});
+  document.getElementById('np-name').value='';
+  renderParts();
+});
+
+analyzeBtn.addEventListener('click', async function(){
+  analyzeBtn.disabled = true;
+  statusEl.textContent = 'Claude рассматривает фото и подбирает детали…';
+  document.getElementById('footnote').textContent = '';
+
+  const system = 'Ты помогаешь разложить фото или эскиз вязаной игрушки амигуруми на геометрические примитивы для расчёта схемы крючком. ' +
+    'Игнорируй фоновые предметы и реквизит на фото (например корзинки, аксессуары не на теле игрушки) — описывай только основного персонажа. ' +
+    'Определи все визуально различимые детали тела: голова, тело, уши, лапы, руки, хвост, мордочка, любые выступы. ' +
+    'Классифицируй каждую по ближайшему примитиву: sphere (шарообразная часть), cylinder (вытянутая трубчатая часть с ровным диаметром), ' +
+    'disc (плоский круглый элемент), cone (сужающаяся к концу деталь), oval (плоская вытянутая деталь — длина заметно больше ширины, например уши животных), ' +
+    'panel (плоское прямоугольное полотно, вяжется рядами туда-обратно, а не по кругу — используй для отдельной одежды на игрушке типа жилета, накидки, комбинезона, если она выглядит как сшитая накладная деталь, а не часть тела). ' +
+    'Отдельно вынеси декоративные элементы, которые не раскладываются на примитивы и не являются крупной деталью (банты, пришивная фурнитура вроде глаз, вышивка) в поле decorations с кратким описанием стандартного способа вязания или сборки. ' +
+    'Ответь ТОЛЬКО валидным JSON без markdown-разметки и пояснений, строго по схеме: ' +
+    '{"parts":[{"name":"строка на русском","type":"sphere|cylinder|disc|cone|oval|panel","count":целое число,' +
+    '"diam_ratio":число от 0.02 до 1 (для sphere/cylinder/disc/cone — диаметр как доля от роста игрушки),' +
+    '"length_ratio":число от 0 до 1 (для sphere/cylinder/cone — доп. длина как доля от роста; для oval — длинная ось; для panel — ширина полотна как доля от роста),' +
+    '"width_ratio":число от 0.02 до 1 (для oval — короткая ось; для panel — высота полотна как доля от роста)}],' +
+    '"decorations":[{"name":"строка на русском","instruction":"краткая инструкция по вязанию/сборке в 1-2 предложениях"}]}';
+
+  try{
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        system: system,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
+            {type:'text', text:'Разбери эту игрушку на детали для вязания амигуруми крючком.'}
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const textBlock = (data.content || []).find(function(c){ return c.type === 'text'; });
+    if(!textBlock) throw new Error('Пустой ответ');
+    const clean = textBlock.text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    const totalHeight = parseFloat(document.getElementById('height').value)||15;
+
+    parts = (parsed.parts||[]).map(function(p){
+      const type = ['sphere','cylinder','disc','cone','oval','panel'].indexOf(p.type)>=0 ? p.type : 'sphere';
+      const base = {id:idCounter++, name:p.name, type:type, count:Math.max(1, parseInt(p.count)||1)};
+      if(type==='oval' || type==='panel'){
+        base.length = r2(Math.max(0.5, (p.length_ratio||0.2) * totalHeight));
+        base.width = r2(Math.max(0.5, (p.width_ratio||0.1) * totalHeight));
+        base.diam = 0; base.extra = 0;
+      } else {
+        base.diam = r2(Math.max(0.5, (p.diam_ratio||0.2) * totalHeight));
+        base.extra = r2(Math.max(0, (p.length_ratio||0) * totalHeight));
+        base.length = 3; base.width = 1.5;
+      }
+      return base;
+    });
+    decorations = (parsed.decorations||[]).map(function(d){ return {name:d.name, instruction:d.instruction}; });
+
+    openIdx = null;
+    statusEl.textContent = 'Готово — найдено ' + parts.length + ' вид(ов) деталей' + (decorations.length ? ' и ' + decorations.length + ' декоративный элемент.' : '.');
+    document.getElementById('footnote').textContent = 'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием.';
+    renderParts();
+  }catch(err){
+    statusEl.textContent = 'Не удалось разобрать фото: ' + err.message + '. Попробуйте другое изображение.';
+  }finally{
+    analyzeBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
