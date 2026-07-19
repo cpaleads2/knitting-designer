@@ -200,7 +200,7 @@ const T = {
     namePlaceholder:'назва',
     addBtn:'+ додати',
     pieces:'деталей всього', types:'видів деталей', totalRounds:'рядів по іграшці',
-    rounds:'рядів:', maxSt:'петель макс:', pcs:'шт',
+    rounds:'рядів:', maxSt:'максимум петель:', pcs:'шт',
     showRows:'показати ряди', hideRows:'сховати ряди',
     decorHeader:'декоративні елементи (без розрахунку рядів)',
     footnote:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням.',
@@ -224,6 +224,7 @@ const T = {
 
 let currentLang = 'en';
 let selectedFileName = null;
+let lastPartsCount = null, lastDecorCount = null;
 let imageBase64 = null, imageMediaType = null;
 let parts = [];
 let decorations = [];
@@ -354,6 +355,10 @@ function setLang(lang){
 
   const typeSel = document.getElementById('np-type');
   typeSel.innerHTML = Object.keys(t.typeLabels).map(function(k){ return '<option value="'+k+'">'+t.typeLabels[k]+'</option>'; }).join('');
+
+  if(lastPartsCount !== null){
+    document.getElementById('status').textContent = t.doneText(lastPartsCount, lastDecorCount);
+  }
 
   renderParts();
 }
@@ -523,6 +528,8 @@ analyzeBtn.addEventListener('click', async function(){
     decorations = (parsed.decorations||[]).map(function(d){ return {name:d.name, instruction:d.instruction}; });
 
     openIdx = null;
+    lastPartsCount = parts.length;
+    lastDecorCount = decorations.length;
     statusEl.textContent = t.doneText(parts.length, decorations.length);
     renderParts();
   }catch(err){
