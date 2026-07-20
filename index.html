@@ -113,6 +113,10 @@
   </div>
 
   <div id="decorations"></div>
+  <div id="pdf-section" style="display:none; margin-top:1rem;">
+    <button class="btn-primary" id="generate-pdf-btn"></button>
+    <div class="status" id="pdf-status"></div>
+  </div>
   <p class="note" id="footnote"></p>
 </div>
 
@@ -136,6 +140,9 @@ const T = {
     showRows:'show rounds', hideRows:'hide rounds',
     decorHeader:'decorative elements (not calculated as rows)',
     footnote:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting.',
+    generatePdfBtn:'Generate Pattern (PDF)',
+    pdfGenerating:'Putting together your PDF…',
+    pdfError:(msg)=>'Could not generate the PDF: '+msg,
     analyzing:'Looking at your photo and identifying the parts…',
     doneText:(n,d)=>'Done — found '+n+' part type(s)'+(d?' and '+d+' decorative element(s).':'.'),
     errorText:(msg)=>'Could not analyze the photo: '+msg+'. Try another image.',
@@ -170,6 +177,9 @@ const T = {
     showRows:'показать ряды', hideRows:'скрыть ряды',
     decorHeader:'декоративные элементы (без расчёта рядов)',
     footnote:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием.',
+    generatePdfBtn:'Создать PDF схему',
+    pdfGenerating:'Собираем PDF…',
+    pdfError:(msg)=>'Не удалось создать PDF: '+msg,
     analyzing:'Анализируем фото и подбираем детали…',
     doneText:(n,d)=>'Готово — найдено '+n+' вид(ов) деталей'+(d?' и '+d+' декоративный элемент.':'.'),
     errorText:(msg)=>'Не удалось разобрать фото: '+msg+'. Попробуйте другое изображение.',
@@ -204,6 +214,9 @@ const T = {
     showRows:'показати ряди', hideRows:'сховати ряди',
     decorHeader:'декоративні елементи (без розрахунку рядів)',
     footnote:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням.',
+    generatePdfBtn:'Створити PDF схему',
+    pdfGenerating:'Збираємо PDF…',
+    pdfError:(msg)=>'Не вдалося створити PDF: '+msg,
     analyzing:'Аналізуємо фото і підбираємо деталі…',
     doneText:(n,d)=>'Готово — знайдено '+n+' вид(ів) деталей'+(d?' і '+d+' декоративний елемент.':'.'),
     errorText:(msg)=>'Не вдалося розібрати фото: '+msg+'. Спробуйте інше зображення.',
@@ -352,6 +365,7 @@ function setLang(lang){
   document.getElementById('t-addlabel').textContent = t.addLabel;
   document.getElementById('np-name').placeholder = t.namePlaceholder;
   document.getElementById('add-part-btn').textContent = t.addBtn;
+  document.getElementById('generate-pdf-btn').textContent = t.generatePdfBtn;
 
   const typeSel = document.getElementById('np-type');
   typeSel.innerHTML = Object.keys(t.typeLabels).map(function(k){ return '<option value="'+k+'">'+t.typeLabels[k]+'</option>'; }).join('');
@@ -433,6 +447,7 @@ function renderParts(){
     : '';
 
   document.getElementById('footnote').textContent = decorations.length || parts.length ? t.footnote : '';
+  document.getElementById('pdf-section').style.display = parts.length ? 'block' : 'none';
 }
 
 const fileInput = document.getElementById('file');
@@ -536,6 +551,44 @@ analyzeBtn.addEventListener('click', async function(){
     statusEl.textContent = t.errorText(err.message);
   }finally{
     analyzeBtn.disabled = false;
+  }
+});
+
+document.getElementById('generate-pdf-btn').addEventListener('click', async function(){
+  const t = T[currentLang];
+  const btn = document.getElementById('generate-pdf-btn');
+  const pdfStatus = document.getElementById('pdf-status');
+  btn.disabled = true;
+  pdfStatus.textContent = t.pdfGenerating;
+
+  const stg = parseFloat(document.getElementById('stg').value)||16;
+  const rowg = parseFloat(document.getElementById('rowg').value)||14;
+  const height = parseFloat(document.getElementById('height').value)||15;
+
+  try{
+    const response = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ lang: currentLang, height, stg, rowg, title: (parts[0] && parts[0].name) ? T[currentLang].title : '', parts, decorations })
+    });
+    if(!response.ok){
+      const err = await response.json().catch(function(){ return {error:'HTTP '+response.status}; });
+      throw new Error(err.error || ('HTTP '+response.status));
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pattern.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    pdfStatus.textContent = '';
+  }catch(err){
+    pdfStatus.textContent = t.pdfError(err.message);
+  }finally{
+    btn.disabled = false;
   }
 });
 
