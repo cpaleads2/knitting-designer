@@ -91,7 +91,7 @@ module.exports = async function handler(req, res) {
     // ---------- Титул ----------
     drawLine('Amigurumi Designer', { size: 10, useFont: fontBold, color: ACCENT, gap: 6 });
     drawLine(title || '-', { size: 20, useFont: fontBold, color: INK, gap: 4 });
-    drawWrapped(`${t.heightRow}: ${height} cm  ·  ${t.gaugeRow.toLowerCase()}: ${stg}/${rowg}`, { size: 9, color: INK2, gap: 10 });
+    drawWrapped(`${t.heightRow}: ${height} cm  ·  ${t.gaugeFormat(stg, rowg)}`, { size: 9, color: INK2, gap: 10 });
 
     // ---------- Фото ----------
     if (embeddedPhoto) {
@@ -119,19 +119,19 @@ module.exports = async function handler(req, res) {
     drawLine(t.materialsHeader, { size: 13, useFont: fontBold, gap: 8 });
     const matRows = [
       [t.heightRow, `${height} cm`],
-      [t.gaugeRow, `${stg} / ${rowg} / 10cm`],
+      [t.gaugeRow, t.gaugeFormat(stg, rowg)],
       [t.yarnRow, t.yarnVal],
       [t.hookRow, t.hookVal],
       [t.stuffRow, t.stuffVal],
       [t.extraRow, t.extraVal],
     ];
     for (const [label, value] of matRows) {
-      ensureSpace(16);
+      ensureSpace(20);
       page.drawText(label, { x: MARGIN, y: y - 9.5, size: 9.5, font: fontBold, color: INK });
       page.drawText(String(value), { x: MARGIN + 170, y: y - 9.5, size: 9.5, font, color: INK });
-      y -= 8;
+      y -= 14;
       page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.5, color: LINE });
-      y -= 8;
+      y -= 6;
     }
     spacer(10);
 
