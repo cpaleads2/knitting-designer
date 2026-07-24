@@ -39,7 +39,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { lang = 'ru', height = 15, stg = 16, rowg = 14, title = '', parts = [], decorations = [] } = req.body;
+    const { lang = 'ru', height = 15, stg = 16, rowg = 14, title = '', parts = [], decorations = [], photoBase64 = null, photoMediaType = '' } = req.body;
     const t = PDF_TEXT[lang] || PDF_TEXT.ru;
 
     const pdfDoc = await PDFDocument.create();
@@ -49,6 +49,18 @@ module.exports = async function handler(req, res) {
     const boldBytes = fs.readFileSync(path.join(process.cwd(), 'api/fonts/DejaVuSans-Bold.ttf'));
     const font = await pdfDoc.embedFont(regularBytes, { subset: true });
     const fontBold = await pdfDoc.embedFont(boldBytes, { subset: true });
+
+    let embeddedPhoto = null;
+    if (photoBase64) {
+      try {
+        const imgBytes = Buffer.from(photoBase64, 'base64');
+        embeddedPhoto = photoMediaType.includes('png')
+          ? await pdfDoc.embedPng(imgBytes)
+          : await pdfDoc.embedJpg(imgBytes);
+      } catch (e) {
+        embeddedPhoto = null; // если фото повреждено или формат не распознан — просто пропускаем картинку, не роняем весь PDF
+      }
+    }
 
     let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
     let y = PAGE_H - MARGIN;
@@ -80,6 +92,16 @@ module.exports = async function handler(req, res) {
     drawLine('Amigurumi Designer', { size: 10, useFont: fontBold, color: ACCENT, gap: 6 });
     drawLine(title || '-', { size: 20, useFont: fontBold, color: INK, gap: 4 });
     drawWrapped(`${t.heightRow}: ${height} cm  ·  ${t.gaugeRow.toLowerCase()}: ${stg}/${rowg}`, { size: 9, color: INK2, gap: 10 });
+
+    // ---------- Фото ----------
+    if (embeddedPhoto) {
+      const maxW = 200, maxH = 240;
+      const scale = Math.min(maxW / embeddedPhoto.width, maxH / embeddedPhoto.height, 1);
+      const w = embeddedPhoto.width * scale, h = embeddedPhoto.height * scale;
+      ensureSpace(h + 14);
+      page.drawImage(embeddedPhoto, { x: MARGIN + (CONTENT_W - w) / 2, y: y - h, width: w, height: h });
+      y -= h + 14;
+    }
 
     // ---------- Дисклеймер ----------
     const discLines = wrapText('⚠ ' + t.disclaimer, font, 9, CONTENT_W - 20);
