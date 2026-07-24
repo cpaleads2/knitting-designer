@@ -143,6 +143,7 @@ const T = {
     generatePdfBtn:'Generate Pattern (PDF)',
     pdfGenerating:'Putting together your PDF…',
     pdfError:(msg)=>'Could not generate the PDF: '+msg,
+    patternTitle:'Amigurumi Pattern',
     analyzing:'Looking at your photo and identifying the parts…',
     doneText:(n,d)=>'Done — found '+n+' part type(s)'+(d?' and '+d+' decorative element(s).':'.'),
     errorText:(msg)=>'Could not analyze the photo: '+msg+'. Try another image.',
@@ -180,6 +181,7 @@ const T = {
     generatePdfBtn:'Создать PDF схему',
     pdfGenerating:'Собираем PDF…',
     pdfError:(msg)=>'Не удалось создать PDF: '+msg,
+    patternTitle:'Схема амигуруми',
     analyzing:'Анализируем фото и подбираем детали…',
     doneText:(n,d)=>'Готово — найдено '+n+' вид(ов) деталей'+(d?' и '+d+' декоративный элемент.':'.'),
     errorText:(msg)=>'Не удалось разобрать фото: '+msg+'. Попробуйте другое изображение.',
@@ -217,6 +219,7 @@ const T = {
     generatePdfBtn:'Створити PDF схему',
     pdfGenerating:'Збираємо PDF…',
     pdfError:(msg)=>'Не вдалося створити PDF: '+msg,
+    patternTitle:'Схема амігурумі',
     analyzing:'Аналізуємо фото і підбираємо деталі…',
     doneText:(n,d)=>'Готово — знайдено '+n+' вид(ів) деталей'+(d?' і '+d+' декоративний елемент.':'.'),
     errorText:(msg)=>'Не вдалося розібрати фото: '+msg+'. Спробуйте інше зображення.',
@@ -569,7 +572,7 @@ document.getElementById('generate-pdf-btn').addEventListener('click', async func
     const response = await fetch('/api/generate-pdf', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ lang: currentLang, height, stg, rowg, title: (parts[0] && parts[0].name) ? T[currentLang].title : '', parts, decorations })
+      body: JSON.stringify({ lang: currentLang, height, stg, rowg, title: T[currentLang].patternTitle, parts, decorations, photoBase64: imageBase64, photoMediaType: imageMediaType })
     });
     if(!response.ok){
       const err = await response.json().catch(function(){ return {error:'HTTP '+response.status}; });
