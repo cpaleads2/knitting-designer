@@ -498,6 +498,7 @@ analyzeBtn.addEventListener('click', async function(){
     'panel (flat rectangular piece worked in rows back-and-forth, not in the round — use for separate garment-like pieces such as a vest, cape or onesie if it looks like an attached layer rather than part of the body). ' +
     'Separately list decorative elements that do not map to a primitive and are not a large piece (bows, sewn-on notions like eyes, embroidery) in the decorations field with a brief construction note. ' +
     'Write all "name" and "instruction" values in ' + t.promptLang + '. ' +
+    'Use ONLY that language for every value — do not mix in English words, do not add English glosses or transliterations in parentheses, and do not switch languages mid-word or mid-phrase. ' +
     'Respond ONLY with valid JSON, no markdown, no preamble, exactly matching this schema: ' +
     '{"parts":[{"name":"string","type":"sphere|cylinder|disc|cone|oval|panel","count":integer,' +
     '"diam_ratio":number 0.02-1 (for sphere/cylinder/disc/cone — diameter as a fraction of toy height),' +
