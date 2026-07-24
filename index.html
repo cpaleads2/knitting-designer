@@ -527,6 +527,12 @@ analyzeBtn.addEventListener('click', async function(){
       const cleanCheck = checkBlock.text.replace(/```json|```/g,'').trim();
       const checkParsed = JSON.parse(cleanCheck);
       if(checkParsed.suitable === false){
+        parts = [];
+        decorations = [];
+        lastPartsCount = null;
+        lastDecorCount = null;
+        openIdx = null;
+        renderParts();
         statusEl.textContent = t.notSuitable(checkParsed.reason || '');
         analyzeBtn.disabled = false;
         return; // останавливаемся здесь — полноценный анализ не запускается, ничего не "списывается"
