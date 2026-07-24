@@ -145,6 +145,8 @@ const T = {
     pdfError:(msg)=>'Could not generate the PDF: '+msg,
     patternTitle:'Amigurumi Pattern',
     analyzing:'Looking at your photo and identifying the parts…',
+    checkingPhoto:'Checking photo quality…',
+    notSuitable:(reason)=>'This photo isn\u2019t quite right for a pattern'+(reason?': '+reason:'')+'. This check is free — no credit was used. Please try another photo.',
     doneText:(n,d)=>'Done — found '+n+' part type(s)'+(d?' and '+d+' decorative element(s).':'.'),
     errorText:(msg)=>'Could not analyze the photo: '+msg+'. Try another image.',
     emptyKeyText:'ANTHROPIC_API_KEY is not set in Vercel (Settings → Environment Variables)',
@@ -183,6 +185,8 @@ const T = {
     pdfError:(msg)=>'Не удалось создать PDF: '+msg,
     patternTitle:'Схема амигуруми',
     analyzing:'Анализируем фото и подбираем детали…',
+    checkingPhoto:'Проверяем качество фото…',
+    notSuitable:(reason)=>'Это фото не очень подходит для схемы'+(reason?': '+reason:'')+'. Проверка бесплатная — генерация не была списана. Попробуйте другое фото.',
     doneText:(n,d)=>'Готово — найдено '+n+' вид(ов) деталей'+(d?' и '+d+' декоративный элемент.':'.'),
     errorText:(msg)=>'Не удалось разобрать фото: '+msg+'. Попробуйте другое изображение.',
     emptyKeyText:'ANTHROPIC_API_KEY не настроен в Vercel (Settings → Environment Variables)',
@@ -221,6 +225,8 @@ const T = {
     pdfError:(msg)=>'Не вдалося створити PDF: '+msg,
     patternTitle:'Схема амігурумі',
     analyzing:'Аналізуємо фото і підбираємо деталі…',
+    checkingPhoto:'Перевіряємо якість фото…',
+    notSuitable:(reason)=>'Це фото не зовсім підходить для схеми'+(reason?': '+reason:'')+'. Перевірка безкоштовна — генерацію не списано. Спробуйте інше фото.',
     doneText:(n,d)=>'Готово — знайдено '+n+' вид(ів) деталей'+(d?' і '+d+' декоративний елемент.':'.'),
     errorText:(msg)=>'Не вдалося розібрати фото: '+msg+'. Спробуйте інше зображення.',
     emptyKeyText:'ANTHROPIC_API_KEY не налаштований у Vercel (Settings → Environment Variables)',
@@ -487,8 +493,52 @@ document.getElementById('add-part-btn').addEventListener('click', function(){
 analyzeBtn.addEventListener('click', async function(){
   const t = T[currentLang];
   analyzeBtn.disabled = true;
-  statusEl.textContent = t.analyzing;
   document.getElementById('footnote').textContent = '';
+
+  // Шаг 1 — бесплатная и дешёвая проверка, годится ли фото вообще для разбора.
+  // Если нет — не тратим полноценный (дорогой) вызов анализа и честно сообщаем об этом.
+  statusEl.textContent = t.checkingPhoto;
+  const checkSystem = 'You assess whether a photo or sketch is suitable for automatically generating an amigurumi crochet pattern from it. ' +
+    'Mark NOT suitable if: the image is too dark, blurry, or low-quality to make out the shape; the main subject is largely cropped or occluded; ' +
+    'the image does not show a toy, plush, or a clear sketch/drawing of an object to recreate (e.g. random scenery, people, screenshots, unrelated products, text-only images); ' +
+    'or there is no single clear main subject to reconstruct. Otherwise mark suitable. ' +
+    'Respond ONLY with valid JSON, no markdown, no preamble: {"suitable": true|false, "reason": "if not suitable, one short sentence in ' + t.promptLang + ' explaining why; empty string if suitable"}';
+
+  try{
+    const checkResponse = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 200,
+        system: checkSystem,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
+            {type:'text', text:'Is this photo suitable for generating an amigurumi pattern?'}
+          ]
+        }]
+      })
+    });
+    const checkData = await checkResponse.json();
+    const checkBlock = (checkData.content || []).find(function(c){ return c.type === 'text'; });
+    if(checkBlock){
+      const cleanCheck = checkBlock.text.replace(/```json|```/g,'').trim();
+      const checkParsed = JSON.parse(cleanCheck);
+      if(checkParsed.suitable === false){
+        statusEl.textContent = t.notSuitable(checkParsed.reason || '');
+        analyzeBtn.disabled = false;
+        return; // останавливаемся здесь — полноценный анализ не запускается, ничего не "списывается"
+      }
+    }
+  }catch(err){
+    // если сама проверка не удалась технически — не блокируем пользователя из-за этого,
+    // просто пропускаем шаг проверки и идём к полноценному анализу как обычно
+  }
+
+  // Шаг 2 — полноценный анализ, только если фото прошло проверку выше.
+  statusEl.textContent = t.analyzing;
 
   const system = 'You help break down a photo or sketch of a crocheted amigurumi toy into geometric primitives for pattern calculation. ' +
     'Ignore background props (baskets, accessories not on the toy itself) — describe only the main character. ' +
@@ -518,85 +568,4 @@ analyzeBtn.addEventListener('click', async function(){
           role: 'user',
           content: [
             {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
-            {type:'text', text:'Break this toy down into amigurumi crochet parts.'}
-          ]
-        }]
-      })
-    });
-    const data = await response.json();
-    const textBlock = (data.content || []).find(function(c){ return c.type === 'text'; });
-    if(!textBlock) throw new Error(data.error && data.error.message ? data.error.message : (data.error || 'Empty response'));
-    const clean = textBlock.text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
-    const totalHeight = parseFloat(document.getElementById('height').value)||15;
-
-    parts = (parsed.parts||[]).map(function(p){
-      const type = ['sphere','cylinder','disc','cone','oval','panel'].indexOf(p.type)>=0 ? p.type : 'sphere';
-      const base = {id:idCounter++, name:p.name, type:type, count:Math.max(1, parseInt(p.count)||1)};
-      if(type==='oval' || type==='panel'){
-        base.length = r2(Math.max(0.5, (p.length_ratio||0.2) * totalHeight));
-        base.width = r2(Math.max(0.5, (p.width_ratio||0.1) * totalHeight));
-        base.diam = 0; base.extra = 0;
-      } else {
-        base.diam = r2(Math.max(0.5, (p.diam_ratio||0.2) * totalHeight));
-        base.extra = r2(Math.max(0, (p.length_ratio||0) * totalHeight));
-        base.length = 3; base.width = 1.5;
-      }
-      return base;
-    });
-    decorations = (parsed.decorations||[]).map(function(d){ return {name:d.name, instruction:d.instruction}; });
-
-    openIdx = null;
-    lastPartsCount = parts.length;
-    lastDecorCount = decorations.length;
-    statusEl.textContent = t.doneText(parts.length, decorations.length);
-    renderParts();
-  }catch(err){
-    statusEl.textContent = t.errorText(err.message);
-  }finally{
-    analyzeBtn.disabled = false;
-  }
-});
-
-document.getElementById('generate-pdf-btn').addEventListener('click', async function(){
-  const t = T[currentLang];
-  const btn = document.getElementById('generate-pdf-btn');
-  const pdfStatus = document.getElementById('pdf-status');
-  btn.disabled = true;
-  pdfStatus.textContent = t.pdfGenerating;
-
-  const stg = parseFloat(document.getElementById('stg').value)||16;
-  const rowg = parseFloat(document.getElementById('rowg').value)||14;
-  const height = parseFloat(document.getElementById('height').value)||15;
-
-  try{
-    const response = await fetch('/api/generate-pdf', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ lang: currentLang, height, stg, rowg, title: T[currentLang].patternTitle, parts, decorations, photoBase64: imageBase64, photoMediaType: imageMediaType })
-    });
-    if(!response.ok){
-      const err = await response.json().catch(function(){ return {error:'HTTP '+response.status}; });
-      throw new Error(err.error || ('HTTP '+response.status));
-    }
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pattern.pdf';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    pdfStatus.textContent = '';
-  }catch(err){
-    pdfStatus.textContent = t.pdfError(err.message);
-  }finally{
-    btn.disabled = false;
-  }
-});
-
-setLang('en');
-</script>
-</body>
-</html>
+            {type:'text', text:'Break th
