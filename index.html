@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Photo to Amigurumi Parts</title>
+<style>
+  :root{
+    --bg:#F7F5F0; --card:#FFFFFF; --ink:#241F1A; --ink-2:#6B6459;
+    --line:#E4DFD5; --accent:#B5502C; --accent-bg:#F3E3DA;
+    --teal:#0F6E56; --teal-bg:#E1F5EE;
+    --blue:#185FA5; --blue-bg:#E6F1FB;
+    --amber:#854F0B; --amber-bg:#FAEEDA;
+    --coral:#993C1D; --coral-bg:#FAECE7;
+    --purple:#534AB7; --purple-bg:#EEEDFE;
+    --green:#2E7D32; --green-bg:#E7F5E8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Segoe UI',system-ui,sans-serif; padding:2rem 1rem;}
+  .wrap{max-width:640px; margin:0 auto;}
+  .langbar{display:flex; gap:6px; margin-bottom:1rem;}
+  .langbtn{border:1px solid var(--line); background:#fff; color:var(--ink-2); font-size:12px; padding:6px 12px; border-radius:20px; cursor:pointer; font-weight:600;}
+  .langbtn.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  h2{font-size:15px; font-weight:600; margin:1.5rem 0 0.75rem;}
+  .sub{color:var(--ink-2); font-size:14px; margin:0 0 1.75rem;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.25rem; margin-bottom:1.25rem;}
+  label{font-size:12px; color:var(--ink-2); display:block; margin-bottom:4px;}
+  input[type=number], input[type=text], input[type=file], select{width:100%; padding:8px 9px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:#fff; font-family:inherit;}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  button{cursor:pointer; border:none; border-radius:8px; padding:11px 16px; font-size:14px; font-weight:600; font-family:inherit;}
+  .btn-primary{background:var(--accent); color:#fff; width:100%;}
+  .btn-primary:disabled{background:#D8CFC2; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink); font-size:13px; padding:9px 14px;}
+  #preview{max-width:100%; max-height:220px; border-radius:10px; margin-top:10px; display:none;}
+  .status{font-size:13px; color:var(--ink-2); margin-top:10px; min-height:18px;}
+  .part{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
+  .ptop{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+  .pname-input{font-weight:600; font-size:14px; border:1px solid transparent; padding:4px 6px; border-radius:6px; max-width:160px;}
+  .pname-input:hover, .pname-input:focus{border-color:var(--line); outline:none;}
+  .badge-select{font-size:11px; padding:3px 8px; border-radius:6px; font-weight:600; border:none;}
+  .b-sphere{background:var(--teal-bg); color:var(--teal);}
+  .b-cylinder{background:var(--blue-bg); color:var(--blue);}
+  .b-disc{background:var(--amber-bg); color:var(--amber);}
+  .b-cone{background:var(--coral-bg); color:var(--coral);}
+  .b-oval{background:var(--purple-bg); color:var(--purple);}
+  .b-panel{background:var(--green-bg); color:var(--green);}
+  .pfields{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:10px;}
+  .pfield{width:88px;}
+  .pfield input{padding:6px 7px; font-size:12px;}
+  .pcount{width:56px;}
+  .pmeta{font-size:12px; color:var(--ink-2); margin-top:8px; display:flex; gap:14px; flex-wrap:wrap;}
+  .pmeta b{color:var(--ink); font-weight:600;}
+  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:12px;}
+  td{padding:5px 6px; border-top:1px solid var(--line);}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:1rem;}
+  .stat{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px;}
+  .stat .n{font-size:22px; font-weight:700;}
+  .stat .l{font-size:12px; color:var(--ink-2);}
+  .toggle{background:transparent; border:1px solid var(--line); font-size:11px; padding:4px 10px; margin-top:8px;}
+  .locked-teaser{background:var(--surface-1,#F7F5F0); border:1px dashed var(--line); border-radius:8px; padding:8px 10px; margin-top:8px; font-size:12px; color:var(--ink-2); text-align:center;}
+  .rm-btn{background:transparent; border:none; color:var(--ink-2); font-size:16px; padding:2px 6px;}
+  .note{font-size:12px; color:var(--ink-2); line-height:1.5;}
+  .deco{background:#fff; border:1px dashed var(--line); border-radius:12px; padding:10px 14px; margin-bottom:8px;}
+  .deco b{font-size:13px;}
+  .deco p{font-size:12px; color:var(--ink-2); margin:4px 0 0;}
+  .addrow{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="langbar" id="langbar"></div>
+  <h1 id="t-title"></h1>
+  <p class="sub" id="t-sub"></p>
+
+  <div class="card">
+    <label id="t-photolabel" for="file"></label>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <label class="btn-ghost" id="t-choosefile" for="file" style="cursor:pointer; white-space:nowrap;"></label>
+      <span id="filename-display" style="font-size:13px; color:var(--ink-2);"></span>
+    </div>
+    <input type="file" id="file" accept="image/*" style="position:absolute; width:1px; height:1px; opacity:0; overflow:hidden;" />
+    <img id="preview" />
+
+    <div style="height:12px;"></div>
+    <div class="row">
+      <div>
+        <label id="t-heightlabel" for="height"></label>
+        <input type="number" id="height" value="15" min="3" max="60" />
+      </div>
+      <div>
+        <label id="t-gaugelabel" for="stg"></label>
+        <div style="display:flex; gap:6px;">
+          <input type="number" id="stg" value="16" />
+          <input type="number" id="rowg" value="14" />
+        </div>
+      </div>
+    </div>
+
+    <div style="height:14px;"></div>
+    <button class="btn-primary" id="analyze" disabled></button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="stats"></div>
+  <div id="parts"></div>
+
+  <div class="card">
+    <label id="t-addlabel" style="margin-bottom:10px;"></label>
+    <div class="addrow">
+      <input type="text" id="np-name" />
+      <select id="np-type"></select>
+    </div>
+    <button class="btn-ghost" id="add-part-btn" style="width:100%;"></button>
+  </div>
+
+  <div id="decorations"></div>
+  <div id="pdf-section" style="display:none; margin-top:1rem;">
+    <button class="btn-primary" id="generate-pdf-btn"></button>
+    <div class="status" id="pdf-status"></div>
+  </div>
+  <p class="note" id="footnote"></p>
+</div>
+
+<script>
+const T = {
+  en: {
+    langName:'EN',
+    title:'Photo → Amigurumi Parts',
+    sub:'Fell in love with someone\u2019s toy? Upload a photo or sketch — get a ready-to-use crochet pattern in minutes.',
+    photoLabel:'Photo or sketch of the item',
+    heightLabel:'Desired toy height, cm',
+    gaugeLabel:'Stitches / rows per 10 cm',
+    analyzeBtn:'Create pattern',
+    chooseFile:'Choose file',
+    noFileChosen:'No file chosen',
+    addLabel:'add a part manually',
+    namePlaceholder:'name',
+    addBtn:'+ add',
+    pieces:'parts total', types:'part types', totalRounds:'rounds total',
+    rounds:'rounds:', maxSt:'max stitches:', pcs:'pcs',
+    showRows:'show rounds', hideRows:'hide rounds',
+    decorHeader:'decorative elements (not calculated as rows)',
+    footnote:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting.',
+    generatePdfBtn:'Unlock Full Pattern + PDF — $4.99',
+    lockedRowsTeaser:'Full row-by-row instructions unlock after payment',
+    lockedDecoTeaser:'Full instructions unlock after payment',
+    pdfGenerating:'Putting together your PDF…',
+    pdfError:(msg)=>'Could not generate the PDF: '+msg,
+    patternTitle:'Amigurumi Pattern',
+    analyzing:'Looking at your photo and identifying the parts…',
+    checkingPhoto:'Checking photo quality…',
+    notSuitable:(reason)=>'This photo isn\u2019t quite right for a pattern'+(reason?': '+reason:'')+'. This check is free — no credit was used. Please try another photo.',
+    doneText:(n,d)=>'Done — found '+n+' part type(s)'+(d?' and '+d+' decorative element(s).':'.'),
+    errorText:(msg)=>'Could not analyze the photo: '+msg+'. Try another image.',
+    emptyKeyText:'ANTHROPIC_API_KEY is not set in Vercel (Settings → Environment Variables)',
+    typeLabels:{sphere:'sphere', cylinder:'cylinder', disc:'disc', cone:'cone', oval:'oval', panel:'panel'},
+    fieldLabels:{
+      sphere:[['diam','diameter, cm'],['extra','straight part, cm']],
+      cylinder:[['diam','diameter, cm'],['extra','length, cm']],
+      disc:[['diam','diameter, cm']],
+      cone:[['diam','diameter, cm'],['extra','taper, cm']],
+      oval:[['length','length, cm'],['width','width, cm']],
+      panel:[['length','width, cm'],['width','height, cm']]
+    },
+    vocab:{sc:'sc', ch:'ch'},
+    promptLang:'English (use US crochet terms: sc = single crochet)'
+  },
+  ru: {
+    langName:'RU',
+    title:'Фото → детали для амигуруми',
+    sub:'Понравилась какая-то игрушка? Загрузите её фото или эскиз и получите готовую схему для вязания за пару минут.',
+    photoLabel:'Фото или эскиз изделия',
+    heightLabel:'Желаемый рост игрушки, см',
+    gaugeLabel:'Петель / рядов на 10 см',
+    analyzeBtn:'Создать схему',
+    chooseFile:'Выберите файл',
+    noFileChosen:'Файл не выбран',
+    addLabel:'добавить деталь вручную',
+    namePlaceholder:'название',
+    addBtn:'+ добавить',
+    pieces:'деталей всего', types:'видов деталей', totalRounds:'рядов по игрушке',
+    rounds:'рядов:', maxSt:'петель макс:', pcs:'шт',
+    showRows:'показать ряды', hideRows:'скрыть ряды',
+    decorHeader:'декоративные элементы (без расчёта рядов)',
+    footnote:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием.',
+    generatePdfBtn:'Разблокировать схему + PDF — $4.99',
+    lockedRowsTeaser:'Полная построчная раскладка открывается после оплаты',
+    lockedDecoTeaser:'Полная инструкция открывается после оплаты',
+    pdfGenerating:'Собираем PDF…',
+    pdfError:(msg)=>'Не удалось создать PDF: '+msg,
+    patternTitle:'Схема амигуруми',
+    analyzing:'Анализируем фото и подбираем детали…',
+    checkingPhoto:'Проверяем качество фото…',
+    notSuitable:(reason)=>'Это фото не очень подходит для схемы'+(reason?': '+reason:'')+'. Проверка бесплатная — генерация не была списана. Попробуйте другое фото.',
+    doneText:(n,d)=>'Готово — найдено '+n+' вид(ов) деталей'+(d?' и '+d+' декоративный элемент.':'.'),
+    errorText:(msg)=>'Не удалось разобрать фото: '+msg+'. Попробуйте другое изображение.',
+    emptyKeyText:'ANTHROPIC_API_KEY не настроен в Vercel (Settings → Environment Variables)',
+    typeLabels:{sphere:'шар', cylinder:'цилиндр', disc:'диск', cone:'конус', oval:'овал', panel:'полотно'},
+    fieldLabels:{
+      sphere:[['diam','диаметр, см'],['extra','прямая часть, см']],
+      cylinder:[['diam','диаметр, см'],['extra','длина, см']],
+      disc:[['diam','диаметр, см']],
+      cone:[['diam','диаметр, см'],['extra','сужение, см']],
+      oval:[['length','длина, см'],['width','ширина, см']],
+      panel:[['length','ширина, см'],['width','высота, см']]
+    },
+    vocab:{sc:'сбн', ch:'возд.п.'},
+    promptLang:'русском языке'
+  },
+  uk: {
+    langName:'UA',
+    title:'Фото → деталі для амігурумі',
+    sub:'Сподобалася чиясь іграшка? Завантажте фото або ескіз — і отримайте готову схему для в’язання за кілька хвилин.',
+    photoLabel:'Фото або ескіз виробу',
+    heightLabel:'Бажаний зріст іграшки, см',
+    gaugeLabel:'Петель / рядів на 10 см',
+    analyzeBtn:'Створити схему',
+    chooseFile:'Виберіть файл',
+    noFileChosen:'Файл не вибрано',
+    addLabel:'додати деталь вручну',
+    namePlaceholder:'назва',
+    addBtn:'+ додати',
+    pieces:'деталей всього', types:'видів деталей', totalRounds:'рядів по іграшці',
+    rounds:'рядів:', maxSt:'максимум петель:', pcs:'шт',
+    showRows:'показати ряди', hideRows:'сховати ряди',
+    decorHeader:'декоративні елементи (без розрахунку рядів)',
+    footnote:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням.',
+    generatePdfBtn:'Розблокувати схему + PDF — $4.99',
+    lockedRowsTeaser:'Повна розкладка по рядах відкривається після оплати',
+    lockedDecoTeaser:'Повна інструкція відкривається після оплати',
+    pdfGenerating:'Збираємо PDF…',
+    pdfError:(msg)=>'Не вдалося створити PDF: '+msg,
+    patternTitle:'Схема амігурумі',
+    analyzing:'Аналізуємо фото і підбираємо деталі…',
+    checkingPhoto:'Перевіряємо якість фото…',
+    notSuitable:(reason)=>'Це фото не зовсім підходить для схеми'+(reason?': '+reason:'')+'. Перевірка безкоштовна — генерацію не списано. Спробуйте інше фото.',
+    doneText:(n,d)=>'Готово — знайдено '+n+' вид(ів) деталей'+(d?' і '+d+' декоративний елемент.':'.'),
+    errorText:(msg)=>'Не вдалося розібрати фото: '+msg+'. Спробуйте інше зображення.',
+    emptyKeyText:'ANTHROPIC_API_KEY не налаштований у Vercel (Settings → Environment Variables)',
+    typeLabels:{sphere:'куля', cylinder:'циліндр', disc:'диск', cone:'конус', oval:'овал', panel:'полотно'},
+    fieldLabels:{
+      sphere:[['diam','діаметр, см'],['extra','пряма частина, см']],
+      cylinder:[['diam','діаметр, см'],['extra','довжина, см']],
+      disc:[['diam','діаметр, см']],
+      cone:[['diam','діаметр, см'],['extra','звуження, см']],
+      oval:[['length','довжина, см'],['width','ширина, см']],
+      panel:[['length','ширина, см'],['width','висота, см']]
+    },
+    vocab:{sc:'ст.б/н', ch:'п.п.'},
+    promptLang:'українською мовою'
+  }
+};
+
+let currentLang = 'en';
+let resultUnlocked = false;
+let selectedFileName = null;
+let lastPartsCount = null, lastDecorCount = null;
+let imageBase64 = null, imageMediaType = null;
+let parts = [];
+let decorations = [];
+let openIdx = null;
+let idCounter = 1;
+
+function r2(x){ return Math.round(x||0); }
+
+function ringLine(lang){
+  const v=T[lang].vocab;
+  return {en:'6 '+v.sc+' in magic ring (6)', ru:'6 '+v.sc+' в кольцо амигуруми (6)', uk:'6 '+v.sc+' в кільце амігурумі (6)'}[lang];
+}
+function incText(i, lang){
+  const v=T[lang].vocab, rep=i-2;
+  const tpl = {
+    en: rep<=0 ? '(inc) x6' : '('+rep+' '+v.sc+', inc) x6',
+    ru: rep<=0 ? '(прибавка) x6' : '('+rep+' '+v.sc+', прибавка) x6',
+    uk: rep<=0 ? '(прибавка) x6' : '('+rep+' '+v.sc+', прибавка) x6'
+  };
+  return tpl[lang];
+}
+function decText(i, lang){
+  const v=T[lang].vocab, rep=i-2;
+  const tpl = {
+    en: rep<=0 ? '(dec) x6' : '('+rep+' '+v.sc+', dec) x6',
+    ru: rep<=0 ? '(убавка) x6' : '('+rep+' '+v.sc+', убавка) x6',
+    uk: rep<=0 ? '(убавка) x6' : '('+rep+' '+v.sc+', убавка) x6'
+  };
+  return tpl[lang];
+}
+function aroundText(maxSt, lang){
+  const v=T[lang].vocab;
+  return {en:v.sc+' around ('+maxSt+')', ru:v.sc+' по кругу ('+maxSt+')', uk:v.sc+' по колу ('+maxSt+')'}[lang];
+}
+
+function incInfo(diameterCm, stPer10){
+  const stPerCm = stPer10/10;
+  const circumference = Math.PI*diameterCm;
+  let maxSt = Math.round((circumference*stPerCm)/6)*6;
+  if(maxSt<6) maxSt=6;
+  return {maxSt, incRounds: maxSt/6};
+}
+
+function computeOval(lengthCm, widthCm, stg, rowg, lang){
+  const v=T[lang].vocab;
+  const stPerCm = stg/10;
+  const straightSts = Math.max(2, Math.round((lengthCm - widthCm) * stPerCm));
+  const widthRounds = Math.max(1, Math.round((widthCm * stPerCm) / 4));
+  const rounds = []; let n=1;
+  let count = straightSts*2 + 6;
+  const chainTpl = {
+    en: 'chain '+(straightSts+1)+'; work around: '+straightSts+' '+v.sc+', 3 '+v.sc+' in last st, '+straightSts+' '+v.sc+' along other side, 3 '+v.sc+' in first st ('+count+')',
+    ru: 'цепочка из '+(straightSts+1)+' возд.п.; по кругу: '+straightSts+' сбн, 3 сбн в последнюю петлю, '+straightSts+' сбн по другой стороне, 3 сбн в первую петлю ('+count+')',
+    uk: 'ланцюжок з '+(straightSts+1)+' п.п.; по колу: '+straightSts+' ст.б/н, 3 ст.б/н в останню петлю, '+straightSts+' ст.б/н по іншій стороні, 3 ст.б/н в першу петлю ('+count+')'
+  };
+  rounds.push({n:n++, text:chainTpl[lang]});
+  for(let i=1;i<widthRounds;i++){
+    count += 4;
+    const incTpl = {
+      en: 'inc, '+straightSts+' '+v.sc+', inc x2, '+straightSts+' '+v.sc+', inc ('+count+')',
+      ru: 'прибавка, '+straightSts+' сбн, прибавка x2, '+straightSts+' сбн, прибавка ('+count+')',
+      uk: 'прибавка, '+straightSts+' ст.б/н, прибавка x2, '+straightSts+' ст.б/н, прибавка ('+count+')'
+    };
+    rounds.push({n:n++, text:incTpl[lang]});
+  }
+  return {rounds, maxSt:count, total:rounds.length, height:r2(widthCm)};
+}
+
+function computePanel(widthCm, heightCm, stg, rowg, lang){
+  const v=T[lang].vocab;
+  const stPerCm = stg/10, rowPerCm = rowg/10;
+  const widthSts = Math.max(2, Math.round(widthCm*stPerCm));
+  const heightRows = Math.max(1, Math.round(heightCm*rowPerCm));
+  const rounds = []; let n=1;
+  const chainTpl = {en:'chain '+(widthSts+1), ru:'цепочка из '+(widthSts+1)+' возд.п.', uk:'ланцюжок з '+(widthSts+1)+' п.п.'};
+  rounds.push({n:n++, text:chainTpl[lang]});
+  const rowTpl = {
+    en: 'row of '+v.sc+', '+widthSts+' sts, turn',
+    ru: 'ряд сбн по '+widthSts+' петель, повернуть вязание',
+    uk: 'ряд ст.б/н, '+widthSts+' петель, повернути в’язання'
+  };
+  for(let r=0;r<heightRows;r++) rounds.push({n:n++, text:rowTpl[lang]});
+  return {rounds, maxSt:widthSts, total:rounds.length, height:r2(heightCm)};
+}
+
+function computePart(p, stg, rowg, lang){
+  if(p.type==='oval') return computeOval(p.length||3, p.width||1.5, stg, rowg, lang);
+  if(p.type==='panel') return computePanel(p.length||3, p.width||3, stg, rowg, lang);
+
+  const info = incInfo(p.diam||3, stg);
+  const maxSt = info.maxSt, incRounds = info.incRounds;
+  const rowPerCm = rowg/10;
+  const rounds = []; let n=1;
+  rounds.push({n:n++, text:ringLine(lang)});
+  for(let i=2;i<=incRounds;i++) rounds.push({n:n++, text:incText(i,lang)+' ('+(6*i)+')'});
+  if(p.type==='disc') return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+
+  const straight = Math.max(0, Math.round((p.extra||0)*rowPerCm));
+  for(let j=0;j<straight;j++) rounds.push({n:n++, text:aroundText(maxSt,lang)});
+  if(p.type==='cylinder') return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+
+  if(p.type==='sphere'){ for(let i=incRounds;i>=2;i--) rounds.push({n:n++, text:decText(i,lang)+' ('+(6*(i-1))+')'}); }
+  else if(p.type==='cone'){ for(let i=incRounds;i>=2;i-=2) rounds.push({n:n++, text:decText(i,lang)+' ('+(6*(i-1))+')'}); }
+  return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+}
+
+function setLang(lang){
+  currentLang = lang;
+  const t = T[lang];
+  document.getElementById('langbar').innerHTML = Object.keys(T).map(function(l){
+    return '<button class="langbtn'+(l===lang?' active':'')+'" data-lang="'+l+'">'+T[l].langName+'</button>';
+  }).join('');
+  document.querySelectorAll('.langbtn').forEach(function(b){
+    b.addEventListener('click', function(){ setLang(b.dataset.lang); });
+  });
+
+  document.getElementById('t-title').textContent = t.title;
+  document.getElementById('t-sub').textContent = t.sub;
+  document.getElementById('t-photolabel').textContent = t.photoLabel;
+  document.getElementById('t-choosefile').textContent = t.chooseFile;
+  document.getElementById('filename-display').textContent = selectedFileName || t.noFileChosen;
+  document.getElementById('t-heightlabel').textContent = t.heightLabel;
+  document.getElementById('t-gaugelabel').textContent = t.gaugeLabel;
+  document.getElementById('analyze').textContent = t.analyzeBtn;
+  document.getElementById('t-addlabel').textContent = t.addLabel;
+  document.getElementById('np-name').placeholder = t.namePlaceholder;
+  document.getElementById('add-part-btn').textContent = t.addBtn;
+  document.getElementById('generate-pdf-btn').textContent = t.generatePdfBtn;
+
+  const typeSel = document.getElementById('np-type');
+  typeSel.innerHTML = Object.keys(t.typeLabels).map(function(k){ return '<option value="'+k+'">'+t.typeLabels[k]+'</option>'; }).join('');
+
+  if(lastPartsCount !== null){
+    document.getElementById('status').textContent = t.doneText(lastPartsCount, lastDecorCount);
+  }
+
+  renderParts();
+}
+
+function renderParts(){
+  const t = T[currentLang];
+  const stg = parseFloat(document.getElementById('stg').value)||16;
+  const rowg = parseFloat(document.getElementById('rowg').value)||14;
+  const box = document.getElementById('parts');
+  box.innerHTML = '';
+  let totalRounds=0, totalPieces=0;
+
+  parts.forEach((p, idx) => {
+    const res = computePart(p, stg, rowg, currentLang);
+    totalRounds += res.total * p.count;
+    totalPieces += p.count;
+
+    const fields = t.fieldLabels[p.type];
+    const fieldsHtml = fields.map(function(f){
+      return '<div class="pfield"><label>'+f[1]+'</label><input type="number" step="1" min="0" data-field="'+f[0]+'" data-idx="'+idx+'" value="'+r2(p[f[0]])+'"></div>';
+    }).join('');
+
+    const el = document.createElement('div');
+    el.className = 'part';
+    const rowsHtml = res.rounds.map(function(r){ return '<tr><td style="color:var(--ink-2);width:30px;">'+r.n+'</td><td>'+r.text+'</td></tr>'; }).join('');
+    const typeOptions = Object.keys(t.typeLabels).map(function(k){ return '<option value="'+k+'"'+(k===p.type?' selected':'')+'>'+t.typeLabels[k]+'</option>'; }).join('');
+
+    let rowsBlockHtml;
+    if(resultUnlocked){
+      rowsBlockHtml = '<button class="toggle" data-i="'+idx+'">'+(openIdx===idx?t.hideRows:t.showRows)+'</button>'+
+        (openIdx===idx ? '<table><tbody>'+rowsHtml+'</tbody></table>' : '');
+    } else {
+      const firstRowHtml = res.rounds[0] ? '<tr><td style="color:var(--ink-2);width:30px;">1</td><td>'+res.rounds[0].text+'</td></tr>' : '';
+      rowsBlockHtml = '<table><tbody>'+firstRowHtml+'</tbody></table>'+
+        '<div class="locked-teaser">🔒 '+t.lockedRowsTeaser+'</div>';
+    }
+
+    el.innerHTML =
+      '<div class="ptop">'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
+          '<select class="badge-select b-'+p.type+'" data-idx="'+idx+'" data-field="type">'+typeOptions+'</select>'+
+          '<input class="pname-input" type="text" data-idx="'+idx+'" data-field="name" value="'+p.name+'">'+
+          '<div class="pfield pcount"><label>'+t.pcs+'</label><input type="number" min="1" data-field="count" data-idx="'+idx+'" value="'+p.count+'"></div>'+
+        '</div>'+
+        '<button class="rm-btn" data-remove="'+idx+'" aria-label="remove">×</button>'+
+      '</div>'+
+      '<div class="pfields">'+fieldsHtml+'</div>'+
+      '<div class="pmeta">'+
+        '<span>'+t.rounds+' <b>'+res.total+'</b></span>'+
+        '<span>'+t.maxSt+' <b>'+res.maxSt+'</b></span>'+
+      '</div>'+
+      rowsBlockHtml;
+    box.appendChild(el);
+  });
+
+  box.querySelectorAll('[data-i]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openIdx = openIdx===parseInt(btn.dataset.i) ? null : parseInt(btn.dataset.i); renderParts(); });
+  });
+  box.querySelectorAll('[data-remove]').forEach(function(btn){
+    btn.addEventListener('click', function(){ parts.splice(parseInt(btn.dataset.remove),1); renderParts(); });
+  });
+  box.querySelectorAll('[data-field]').forEach(function(inp){
+    inp.addEventListener('change', function(){
+      const idx = parseInt(inp.dataset.idx), field = inp.dataset.field;
+      if(field==='name') parts[idx].name = inp.value;
+      else if(field==='type') parts[idx].type = inp.value;
+      else parts[idx][field] = r2(parseFloat(inp.value));
+      renderParts();
+    });
+  });
+
+  document.getElementById('stats').innerHTML = parts.length ? (
+    '<div class="stats">'+
+      '<div class="stat"><div class="n">'+totalPieces+'</div><div class="l">'+t.pieces+'</div></div>'+
+      '<div class="stat"><div class="n">'+parts.length+'</div><div class="l">'+t.types+'</div></div>'+
+      '<div class="stat"><div class="n">'+totalRounds+'</div><div class="l">'+t.totalRounds+'</div></div>'+
+    '</div>') : '';
+
+  document.getElementById('decorations').innerHTML = decorations.length ?
+    '<h2>'+t.decorHeader+'</h2>' +
+    decorations.map(function(d){
+      return '<div class="deco"><b>'+d.name+'</b><p>'+(resultUnlocked ? d.instruction : '🔒 '+t.lockedDecoTeaser)+'</p></div>';
+    }).join('')
+    : '';
+
+  document.getElementById('footnote').textContent = decorations.length || parts.length ? t.footnote : '';
+  document.getElementById('pdf-section').style.display = parts.length ? 'block' : 'none';
+}
+
+const fileInput = document.getElementById('file');
+const preview = document.getElementById('preview');
+const analyzeBtn = document.getElementById('analyze');
+const statusEl = document.getElementById('status');
+
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if(!f) return;
+  imageMediaType = f.type;
+  selectedFileName = f.name;
+  document.getElementById('filename-display').textContent = selectedFileName;
+  const reader = new FileReader();
+  reader.onload = () => {
+    imageBase64 = reader.result.split(',')[1];
+    preview.src = reader.result;
+    preview.style.display = 'block';
+    analyzeBtn.disabled = false;
+  };
+  reader.readAsDataURL(f);
+});
+
+document.getElementById('add-part-btn').addEventListener('click', function(){
+  const name = document.getElementById('np-name').value.trim() || T[currentLang].namePlaceholder;
+  const type = document.getElementById('np-type').value;
+  parts.push({id:idCounter++, name:name, type:type, count:1, diam:3, extra:0, length:3, width:1.5});
+  document.getElementById('np-name').value='';
+  renderParts();
+});
+
+['stg','rowg'].forEach(function(id){ document.getElementById(id).addEventListener('input', renderParts); });
+
+analyzeBtn.addEventListener('click', async function(){
+  const t = T[currentLang];
+  analyzeBtn.disabled = true;
+  document.getElementById('footnote').textContent = '';
+
+  // Шаг 1 — бесплатная и дешёвая проверка, годится ли фото вообще для разбора.
+  // Если нет — не тратим полноценный (дорогой) вызов анализа и честно сообщаем об этом.
+  statusEl.textContent = t.checkingPhoto;
+  const checkSystem = 'You assess whether a photo or sketch is suitable for automatically generating an amigurumi crochet pattern from it. ' +
+    'Mark NOT suitable if: the image is too dark, blurry, or low-quality to make out the shape; the main subject is largely cropped or occluded; ' +
+    'the image does not show a toy, plush, or a clear sketch/drawing of an object to recreate (e.g. random scenery, people, screenshots, unrelated products, text-only images); ' +
+    'or there is no single clear main subject to reconstruct. Otherwise mark suitable. ' +
+    'Respond ONLY with valid JSON, no markdown, no preamble: {"suitable": true|false, "reason": "if not suitable, one short sentence in ' + t.promptLang + ' explaining why; empty string if suitable"}';
+
+  try{
+    const checkResponse = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 200,
+        system: checkSystem,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
+            {type:'text', text:'Is this photo suitable for generating an amigurumi pattern?'}
+          ]
+        }]
+      })
+    });
+    const checkData = await checkResponse.json();
+    const checkBlock = (checkData.content || []).find(function(c){ return c.type === 'text'; });
+    if(checkBlock){
+      const cleanCheck = checkBlock.text.replace(/```json|```/g,'').trim();
+      const checkParsed = JSON.parse(cleanCheck);
+      if(checkParsed.suitable === false){
+        parts = [];
+        decorations = [];
+        lastPartsCount = null;
+        lastDecorCount = null;
+        openIdx = null;
+        resultUnlocked = false;
+        renderParts();
+        statusEl.textContent = t.notSuitable(checkParsed.reason || '');
+        analyzeBtn.disabled = false;
+        return; // останавливаемся здесь — полноценный анализ не запускается, ничего не "списывается"
+      }
+    }
+  }catch(err){
+    // если сама проверка не удалась технически — не блокируем пользователя из-за этого,
+    // просто пропускаем шаг проверки и идём к полноценному анализу как обычно
+  }
+
+  // Шаг 2 — полноценный анализ, только если фото прошло проверку выше.
+  statusEl.textContent = t.analyzing;
+
+  const system = 'You help break down a photo or sketch of a crocheted amigurumi toy into geometric primitives for pattern calculation. ' +
+    'Ignore background props (baskets, accessories not on the toy itself) — describe only the main character. ' +
+    'Identify all visually distinct body parts: head, body, ears, arms, legs, tail, muzzle, any protrusions. ' +
+    'Classify each by the closest primitive: sphere (round part), cylinder (elongated tube with even diameter), ' +
+    'disc (flat round element), cone (tapering part), oval (flat elongated part — length clearly greater than width, e.g. animal ears), ' +
+    'panel (flat rectangular piece worked in rows back-and-forth, not in the round — use for separate garment-like pieces such as a vest, cape or onesie if it looks like an attached layer rather than part of the body). ' +
+    'Separately list decorative elements that do not map to a primitive and are not a large piece (bows, sewn-on notions like eyes, embroidery) in the decorations field with a brief construction note. ' +
+    'Write all "name" and "instruction" values in ' + t.promptLang + '. ' +
+    'Use ONLY that language for every value — do not mix in English words, do not add English glosses or transliterations in parentheses, and do not switch languages mid-word or mid-phrase. ' +
+    'Respond ONLY with valid JSON, no markdown, no preamble, exactly matching this schema: ' +
+    '{"parts":[{"name":"string","type":"sphere|cylinder|disc|cone|oval|panel","count":integer,' +
+    '"diam_ratio":number 0.02-1 (for sphere/cylinder/disc/cone — diameter as a fraction of toy height),' +
+    '"length_ratio":number 0-1 (for sphere/cylinder/cone — extra straight length as a fraction of height; for oval — long axis; for panel — width as a fraction of height),' +
+    '"width_ratio":number 0.02-1 (for oval — short axis; for panel — height as a fraction of toy height)}],' +
+    '"decorations":[{"name":"string","instruction":"brief 1-2 sentence construction note"}]}';
+
+  try{
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        system: system,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
+            {type:'text', text:'Break this toy down into amigurumi crochet parts.'}
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const textBlock = (data.content || []).find(function(c){ return c.type === 'text'; });
+    if(!textBlock) throw new Error(data.error && data.error.message ? data.error.message : (data.error || 'Empty response'));
+    const clean = textBlock.text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    const totalHeight = parseFloat(document.getElementById('height').value)||15;
+
+    parts = (parsed.parts||[]).map(function(p){
+      const type = ['sphere','cylinder','disc','cone','oval','panel'].indexOf(p.type)>=0 ? p.type : 'sphere';
+      const base = {id:idCounter++, name:p.name, type:type, count:Math.max(1, parseInt(p.count)||1)};
+      if(type==='oval' || type==='panel'){
+        base.length = r2(Math.max(0.5, (p.length_ratio||0.2) * totalHeight));
+        base.width = r2(Math.max(0.5, (p.width_ratio||0.1) * totalHeight));
+        base.diam = 0; base.extra = 0;
+      } else {
+        base.diam = r2(Math.max(0.5, (p.diam_ratio||0.2) * totalHeight));
+        base.extra = r2(Math.max(0, (p.length_ratio||0) * totalHeight));
+        base.length = 3; base.width = 1.5;
+      }
+      return base;
+    });
+    decorations = (parsed.decorations||[]).map(function(d){ return {name:d.name, instruction:d.instruction}; });
+
+    openIdx = null;
+    resultUnlocked = false;
+    lastPartsCount = parts.length;
+    lastDecorCount = decorations.length;
+    statusEl.textContent = t.doneText(parts.length, decorations.length);
+    renderParts();
+  }catch(err){
+    statusEl.textContent = t.errorText(err.message);
+  }finally{
+    analyzeBtn.disabled = false;
+  }
+});
+
+// ЗАМЕНИТЕ на вашу реальную ссылку из Stripe (Payment Link), полученную по инструкции
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/ВАША_ССЫЛКА';
+
+function buildPdfPayload(){
+  const stg = parseFloat(document.getElementById('stg').value)||16;
+  const rowg = parseFloat(document.getElementById('rowg').value)||14;
+  const height = parseFloat(document.getElementById('height').value)||15;
+  return { lang: currentLang, height, stg, rowg, title: T[currentLang].patternTitle, parts, decorations, photoBase64: imageBase64, photoMediaType: imageMediaType };
+}
+
+async function downloadPdf(payload, statusNode){
+  const t = T[payload.lang] || T.en;
+  statusNode.textContent = t.pdfGenerating;
+  const response = await fetch('/api/generate-pdf', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(!response.ok){
+    const err = await response.json().catch(function(){ return {error:'HTTP '+response.status}; });
+    throw new Error(err.error || ('HTTP '+response.status));
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pattern.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  statusNode.textContent = '';
+}
+
+document.getElementById('generate-pdf-btn').addEventListener('click', function(){
+  const payload = buildPdfPayload();
+  try{
+    localStorage.setItem('amigurumi_pending_pdf', JSON.stringify(payload));
+  }catch(e){
+    // если фото слишком большое для localStorage — сохраняем без него,
+    // PDF после оплаты соберётся, просто без фото на титульной странице
+    const withoutPhoto = Object.assign({}, payload, {photoBase64: null});
+    localStorage.setItem('amigurumi_pending_pdf', JSON.stringify(withoutPhoto));
+  }
+  window.location.href = STRIPE_PAYMENT_LINK;
+});
+
+// Проверяем при загрузке страницы, не вернулись ли мы только что с успешной оплаты Stripe
+(async function checkReturnFromPayment(){
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  if(!sessionId) return;
+
+  const pdfStatus = document.getElementById('pdf-status');
+  document.getElementById('pdf-section').style.display = 'block';
+  pdfStatus.textContent = T[currentLang].verifyingPayment;
+
+  try{
+    const verifyResponse = await fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: sessionId })
+    });
+    const verifyData = await verifyResponse.json();
+    if(verifyData.paid){
+      const stored = localStorage.getItem('amigurumi_pending_pdf');
+      if(stored){
+        const payload = JSON.parse(stored);
+        // восстанавливаем результат на экране и разблокируем полный просмотр,
+        // не только скачивание PDF — это и есть решение проблемы со скриншотами:
+        // до этого момента полные ряды никогда не были видны на экране вообще
+        currentLang = payload.lang || currentLang;
+        document.getElementById('height').value = payload.height;
+        document.getElementById('stg').value = payload.stg;
+        document.getElementById('rowg').value = payload.rowg;
+        parts = payload.parts || [];
+        decorations = payload.decorations || [];
+        resultUnlocked = true;
+        lastPartsCount = parts.length;
+        lastDecorCount = decorations.length;
+        setLang(currentLang);
+        await downloadPdf(payload, pdfStatus);
+        localStorage.removeItem('amigurumi_pending_pdf');
+      } else {
+        pdfStatus.textContent = T[currentLang].paymentFailed;
+      }
+    } else {
+      pdfStatus.textContent = T[currentLang].paymentFailed;
+    }
+  }catch(err){
+    pdfStatus.textContent = T[currentLang].paymentFailed;
+  }
+  // убираем session_id из адресной строки, чтобы повторное обновление страницы не пересобирало PDF заново
+  window.history.replaceState({}, '', window.location.pathname);
+})();
+
+setLang('en');
+</script>
+</body>
+</html>
