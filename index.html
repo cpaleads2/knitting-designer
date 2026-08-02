@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amigurumi Designer — фото в схему вязания за минуты</title>
+<style>
+  :root{
+    --bg:#F7F5F0; --card:#FFFFFF; --ink:#241F1A; --ink-2:#6B6459;
+    --line:#E4DFD5; --accent:#B5502C; --accent-bg:#F3E3DA;
+    --teal:#0F6E56; --teal-bg:#E1F5EE;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif; color:var(--ink); background:var(--bg); line-height:1.5;}
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 1.5rem;}
+  section{padding:4rem 0;}
+
+  /* ---------- Header ---------- */
+  header{position:sticky; top:0; background:rgba(247,245,240,0.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); z-index:50;}
+  .headerbar{display:flex; align-items:center; justify-content:space-between; padding:14px 0;}
+  .logo{font-weight:700; font-size:18px;}
+  nav{display:flex; align-items:center; gap:28px;}
+  nav a.navlink{font-size:14px; color:var(--ink-2); font-weight:500;}
+  nav a.navlink:hover{color:var(--ink);}
+  .header-actions{display:flex; align-items:center; gap:14px;}
+  .btn{display:inline-block; border-radius:8px; padding:11px 20px; font-size:14px; font-weight:600; cursor:pointer; border:none; font-family:inherit;}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line);}
+  .navmenu-toggle{display:none;}
+
+  /* ---------- Hero ---------- */
+  .hero{padding-top:5rem; padding-bottom:4rem; text-align:center;}
+  .hero h1{font-size:44px; font-weight:800; line-height:1.15; max-width:760px; margin:0 auto 1.25rem;}
+  .hero p.sub{font-size:18px; color:var(--ink-2); max-width:600px; margin:0 auto 2rem;}
+  .hero-cta{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+  .btn-lg{padding:15px 30px; font-size:16px;}
+  .placeholder-visual{margin:3rem auto 0; max-width:720px; height:320px; background:var(--card); border:1px dashed var(--line); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:14px;}
+
+  /* ---------- Section headers ---------- */
+  .section-title{font-size:30px; font-weight:800; text-align:center; margin-bottom:0.5rem;}
+  .section-sub{font-size:15px; color:var(--ink-2); text-align:center; max-width:560px; margin:0 auto 3rem;}
+
+  /* ---------- How it works ---------- */
+  .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:20px;}
+  .step{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.5rem; text-align:center;}
+  .step .num{width:36px; height:36px; border-radius:50%; background:var(--accent-bg); color:var(--accent); font-weight:700; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:15px;}
+  .step h3{font-size:15px; margin-bottom:6px;}
+  .step p{font-size:13px; color:var(--ink-2);}
+
+  /* ---------- Features ---------- */
+  .features{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .feature{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.5rem;}
+  .feature .icon{width:40px; height:40px; border-radius:10px; background:var(--teal-bg); color:var(--teal); display:flex; align-items:center; justify-content:center; margin-bottom:1rem; font-size:18px; font-weight:700;}
+  .feature h3{font-size:15px; margin-bottom:6px;}
+  .feature p{font-size:13px; color:var(--ink-2);}
+
+  /* ---------- Examples ---------- */
+  .examples-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .example-card{background:var(--card); border:1px dashed var(--line); border-radius:14px; height:220px; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:13px;}
+
+  /* ---------- Content/social block ---------- */
+  .content-block{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:3rem; display:flex; gap:2.5rem; align-items:center;}
+  .content-block .text{flex:1;}
+  .content-block .visual{flex:1; height:220px; background:var(--bg); border:1px dashed var(--line); border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:13px;}
+  .content-block h2{font-size:24px; margin-bottom:0.75rem;}
+  .content-block p{color:var(--ink-2); font-size:14px; margin-bottom:1rem;}
+
+  /* ---------- Pricing preview ---------- */
+  .pricing-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:2rem;}
+  .price-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.75rem; text-align:center;}
+  .price-card.featured{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent);}
+  .price-card .plan-name{font-size:13px; color:var(--ink-2); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:6px;}
+  .price-card .price{font-size:30px; font-weight:800; margin-bottom:10px;}
+  .price-card .price span{font-size:14px; font-weight:500; color:var(--ink-2);}
+  .price-card ul{list-style:none; font-size:13px; color:var(--ink-2); text-align:left; margin:1rem 0;}
+  .price-card li{padding:4px 0;}
+  .pricing-linkwrap{text-align:center;}
+
+  /* ---------- FAQ ---------- */
+  .faq-item{border-bottom:1px solid var(--line); padding:1.1rem 0;}
+  .faq-item summary{cursor:pointer; font-weight:600; font-size:15px; list-style:none; display:flex; justify-content:space-between; align-items:center;}
+  .faq-item summary::-webkit-details-marker{display:none;}
+  .faq-item summary::after{content:'+'; font-size:20px; color:var(--ink-2); font-weight:400;}
+  .faq-item[open] summary::after{content:'−';}
+  .faq-item p{font-size:14px; color:var(--ink-2); margin-top:0.75rem;}
+
+  /* ---------- Final CTA ---------- */
+  .final-cta{background:var(--ink); color:#fff; border-radius:20px; padding:3.5rem 2rem; text-align:center;}
+  .final-cta h2{font-size:28px; margin-bottom:0.75rem;}
+  .final-cta p{color:#C9C4B8; margin-bottom:1.75rem; font-size:15px;}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1px solid var(--line); padding:3rem 0 2rem;}
+  .footer-grid{display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:2rem; margin-bottom:2rem;}
+  .footer-col h4{font-size:13px; margin-bottom:0.9rem; color:var(--ink-2); text-transform:uppercase; letter-spacing:0.03em;}
+  .footer-col a{display:block; font-size:14px; margin-bottom:0.6rem; color:var(--ink);}
+  .footer-bottom{display:flex; justify-content:space-between; align-items:center; padding-top:1.5rem; border-top:1px solid var(--line); font-size:13px; color:var(--ink-2); flex-wrap:wrap; gap:10px;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(36,31,26,0.5); align-items:center; justify-content:center; z-index:100;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:#fff; border-radius:14px; padding:2rem; max-width:340px; text-align:center;}
+  .modal-box p{margin:1rem 0 1.5rem; color:var(--ink-2); font-size:14px;}
+
+  @media(max-width:860px){
+    .steps, .features, .examples-grid, .pricing-grid{grid-template-columns:1fr 1fr;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .content-block{flex-direction:column;}
+    nav{display:none;}
+    .hero h1{font-size:32px;}
+  }
+  @media(max-width:520px){
+    .steps, .features, .examples-grid, .pricing-grid, .footer-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header>
+  <div class="wrap headerbar">
+    <a href="/" class="logo">🧶 Amigurumi Designer</a>
+    <nav>
+      <a class="navlink" href="#how-it-works">Как это работает</a>
+      <a class="navlink" href="#pricing">Тарифы</a>
+      <a class="navlink" href="#examples">Примеры</a>
+      <a class="navlink" href="#faq">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="login-btn">Войти</button>
+      <a class="btn btn-primary" href="app.html">Попробовать бесплатно</a>
+    </div>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap">
+    <h1>[ЗАГОЛОВОК: главное обещание сервиса — фото игрушки → готовая схема вязания]</h1>
+    <p class="sub">[ПОДЗАГОЛОВОК: короткое пояснение в 1-2 предложения, кому и зачем это нужно]</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-lg" href="app.html">Попробовать бесплатно</a>
+      <a class="btn btn-ghost btn-lg" href="#how-it-works">Как это работает</a>
+    </div>
+    <div class="placeholder-visual">[ВИЗУАЛ: фото игрушки рядом со сгенерированной схемой — "до / после"]</div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section id="how-it-works">
+  <div class="wrap">
+    <h2 class="section-title">Как это работает</h2>
+    <p class="section-sub">[Короткое пояснение раздела]</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><h3>Загрузите фото</h3><p>[Фото или эскиз понравившейся игрушки]</p></div>
+      <div class="step"><div class="num">2</div><h3>AI разбирает на детали</h3><p>[Голова, тело, лапы, уши — автоматически]</p></div>
+      <div class="step"><div class="num">3</div><h3>Отредактируйте</h3><p>[Поправьте размеры, если нужно]</p></div>
+      <div class="step"><div class="num">4</div><h3>Получите PDF</h3><p>[Готовая схема с рядами и материалами]</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section id="features" style="background:var(--card); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="wrap">
+    <h2 class="section-title">Почему именно этот сервис</h2>
+    <p class="section-sub">[Раздел с ключевыми преимуществами]</p>
+    <div class="features">
+      <div class="feature"><div class="icon">✓</div><h3>Честная проверка фото</h3><p>[Если фото не подходит — не берём деньги, объясняем]</p></div>
+      <div class="feature"><div class="icon">🌍</div><h3>Три языка</h3><p>[Английская, русская, украинская терминология вязания]</p></div>
+      <div class="feature"><div class="icon">✏️</div><h3>Полный контроль</h3><p>[Любую деталь можно отредактировать вручную]</p></div>
+      <div class="feature"><div class="icon">📄</div><h3>Готовый PDF</h3><p>[Профессионально оформленная схема с материалами]</p></div>
+      <div class="feature"><div class="icon">⚡</div><h3>Минуты, не часы</h3><p>[От фото до схемы — за пару минут]</p></div>
+      <div class="feature"><div class="icon">🧵</div><h3>Для любого уровня</h3><p>[Понятные условные обозначения, построчные инструкции]</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EXAMPLES ================= -->
+<section id="examples">
+  <div class="wrap">
+    <h2 class="section-title">Примеры работ</h2>
+    <p class="section-sub">[Реальные результаты пользователей — фото и получившаяся схема]</p>
+    <div class="examples-grid">
+      <div class="example-card">[Пример 1: фото + превью схемы]</div>
+      <div class="example-card">[Пример 2: фото + превью схемы]</div>
+      <div class="example-card">[Пример 3: фото + превью схемы]</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTENT / SOCIAL ================= -->
+<section>
+  <div class="wrap">
+    <div class="content-block">
+      <div class="text">
+        <h2>[Вдохновение для контента]</h2>
+        <p>[Осторожная формулировка: инструмент помогает создавать контент про вязание для соцсетей — не обещание монетизации, а именно вдохновение/материал для постов и видео]</p>
+        <a class="btn btn-ghost" href="app.html">Попробовать</a>
+      </div>
+      <div class="visual">[Визуал: скриншот сторис/поста с процессом вязания]</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRICING PREVIEW ================= -->
+<section id="pricing" style="background:var(--card); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="wrap">
+    <h2 class="section-title">Тарифы</h2>
+    <p class="section-sub">[Короткое пояснение модели оплаты]</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="plan-name">Free</div>
+        <div class="price">$0</div>
+        <ul><li>[условие 1]</li><li>[условие 2]</li></ul>
+        <a class="btn btn-ghost" href="app.html">Начать</a>
+      </div>
+      <div class="price-card featured">
+        <div class="plan-name">Hobby</div>
+        <div class="price">$4.99<span> /схема</span></div>
+        <ul><li>[условие 1]</li><li>[условие 2]</li></ul>
+        <a class="btn btn-primary" href="app.html">Выбрать</a>
+      </div>
+      <div class="price-card">
+        <div class="plan-name">Creator</div>
+        <div class="price">[цена]</div>
+        <ul><li>[условие 1]</li><li>[условие 2]</li></ul>
+        <a class="btn btn-ghost" href="app.html">Выбрать</a>
+      </div>
+    </div>
+    <div class="pricing-linkwrap"><a class="navlink" href="pricing.html">Смотреть все тарифы →</a></div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq">
+  <div class="wrap" style="max-width:720px;">
+    <h2 class="section-title">Частые вопросы</h2>
+    <p class="section-sub">[Короткий FAQ на 4-5 вопросов]</p>
+    <details class="faq-item"><summary>[Вопрос 1]</summary><p>[Ответ]</p></details>
+    <details class="faq-item"><summary>[Вопрос 2]</summary><p>[Ответ]</p></details>
+    <details class="faq-item"><summary>[Вопрос 3]</summary><p>[Ответ]</p></details>
+    <details class="faq-item"><summary>[Вопрос 4]</summary><p>[Ответ]</p></details>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section>
+  <div class="wrap">
+    <div class="final-cta">
+      <h2>[Финальный призыв к действию]</h2>
+      <p>[Короткая мотивирующая фраза]</p>
+      <a class="btn btn-primary btn-lg" href="app.html">Попробовать бесплатно</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Amigurumi Designer</h4>
+        <p style="font-size:13px; color:var(--ink-2);">[Короткое описание сервиса, 1-2 строки]</p>
+      </div>
+      <div class="footer-col">
+        <h4>Сервис</h4>
+        <a href="#how-it-works">Как это работает</a>
+        <a href="pricing.html">Тарифы</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Документы</h4>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="refund.html">Refund Policy</a>
+      </div>
+      <div class="footer-col">
+        <h4>Контакты</h4>
+        <a href="contact.html">Связаться с нами</a>
+        <a href="mailto:hello@example.com">[email]</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Amigurumi Designer</span>
+      <span>[EN / RU / UA — переключатель языка появится здесь]</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= MODAL: Личный кабинет ================= -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal-box">
+    <h3>Личный кабинет</h3>
+    <p>В разработке — скоро будет доступен.</p>
+    <button class="btn btn-primary" id="modal-close">Понятно</button>
+  </div>
+</div>
+
+<script>
+document.getElementById('login-btn').addEventListener('click', function(){
+  document.getElementById('login-modal').classList.add('show');
+});
+document.getElementById('modal-close').addEventListener('click', function(){
+  document.getElementById('login-modal').classList.remove('show');
+});
+document.getElementById('login-modal').addEventListener('click', function(e){
+  if(e.target === this) this.classList.remove('show');
+});
+</script>
+
+</body>
+</html>
