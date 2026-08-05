@@ -1,4 +1,4 @@
-const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const { PDFDocument, rgb } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
 const fs = require('fs');
 const path = require('path');
@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
           ? await pdfDoc.embedPng(imgBytes)
           : await pdfDoc.embedJpg(imgBytes);
       } catch (e) {
-        embeddedPhoto = null; // если фото повреждено или формат не распознан — просто пропускаем картинку, не роняем весь PDF
+        embeddedPhoto = null;
       }
     }
 
@@ -89,7 +89,7 @@ module.exports = async function handler(req, res) {
     function spacer(h) { y -= h; }
 
     // ---------- Титул ----------
-    drawLine('Amigurumi Designer', { size: 10, useFont: fontBold, color: ACCENT, gap: 6 });
+    drawLine('CrochetLens', { size: 10, useFont: fontBold, color: ACCENT, gap: 6 });
     drawLine(title || '-', { size: 20, useFont: fontBold, color: INK, gap: 4 });
     drawWrapped(`${t.heightRow}: ${height} cm  ·  ${t.gaugeFormat(stg, rowg)}`, { size: 9, color: INK2, gap: 10 });
 

@@ -1,7 +1,3 @@
-// Эта функция автоматически становится адресом /api/analyze на вашем сайте.
-// Она получает запрос от страницы, добавляет секретный ключ (который никто не видит,
-// кроме самого Vercel) и пересылает его в Anthropic — ключ никогда не попадает в браузер.
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
