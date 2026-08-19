@@ -35,7 +35,8 @@
   .hero p.sub{font-size:18px; color:var(--ink-2); max-width:600px; margin:0 auto 2rem;}
   .hero-cta{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
   .btn-lg{padding:15px 30px; font-size:16px;}
-  .placeholder-visual{margin:3rem auto 0; max-width:720px; height:320px; background:var(--card); border:1px dashed var(--line); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:14px;}
+  .placeholder-visual{margin:3rem auto 0; max-width:720px; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:14px;}
+  .placeholder-visual img{display:block; width:100%; height:auto;}
 
   /* ---------- Section headers ---------- */
   .section-title{font-size:30px; font-weight:800; text-align:center; margin-bottom:0.5rem;}
@@ -57,7 +58,8 @@
 
   /* ---------- Examples ---------- */
   .examples-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
-  .example-card{background:var(--card); border:1px dashed var(--line); border-radius:14px; height:220px; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:13px;}
+  .example-card{background:var(--card); border:1px solid var(--line); border-radius:14px; height:220px; overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--ink-2); font-size:13px;}
+  .example-card img{width:100%; height:100%; object-fit:cover; display:block;}
 
   /* ---------- Content/social block ---------- */
   .content-block{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:3rem; display:flex; gap:2.5rem; align-items:center;}
@@ -138,12 +140,12 @@
 <section class="hero">
   <div class="wrap">
     <h1>Любая вязаная игрушка может стать вашей</h1>
-    <p class="sub">Загрузите фото понравившейся игрушки — искусственный интеллект разберёт её на детали и соберёт готовую схему вязания крючком за пару минут.</p>
+    <p class="sub">Загрузите фото или эскиз понравившейся игрушки — искусственный интеллект разберёт её на детали и соберёт готовую схему вязания крючком за пару минут.</p>
     <div class="hero-cta">
       <a class="btn btn-primary btn-lg" href="app.html">Попробовать бесплатно</a>
       <a class="btn btn-ghost btn-lg" href="#how-it-works">Как это работает</a>
     </div>
-    <div class="placeholder-visual">[ВИЗУАЛ: фото игрушки рядом со сгенерированной схемой — "до / после" — нужно фото с подтверждёнными правами на использование, не найденное в сети]</div>
+    <div class="placeholder-visual"><img src="assets/example-before-after-duck.png" alt="Пример: фото игрушки, интерфейс генератора и готовая вязаная копия" loading="lazy"></div>
   </div>
 </section>
 
@@ -183,9 +185,9 @@
     <h2 class="section-title">Примеры работ</h2>
     <p class="section-sub">Реальные результаты сервиса — без постановочных картинок.</p>
     <div class="examples-grid">
-      <div class="example-card">[ЖДЁМ ОТ ВАС: пример 1 — фото + превью схемы]</div>
-      <div class="example-card">[ЖДЁМ ОТ ВАС: пример 2 — фото + превью схемы]</div>
-      <div class="example-card">[ЖДЁМ ОТ ВАС: пример 3 — фото + превью схемы]</div>
+      <div class="example-card"><img src="assets/example-snowman.png" alt="Пример: снеговик — эскиз и готовая вязаная игрушка"></div>
+      <div class="example-card"><img src="assets/example-cat-pumpkin.png" alt="Пример: кот-тыква — фото и готовая вязаная игрушка"></div>
+      <div class="example-card"><img src="assets/example-penguin.png" alt="Пример: пингвин — эскиз и готовая вязаная игрушка"></div>
     </div>
   </div>
 </section>
