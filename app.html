@@ -146,7 +146,7 @@ const T = {
     rounds:'rounds:', maxSt:'max stitches:', pcs:'pcs',
     showRows:'show rounds', hideRows:'hide rounds',
     decorHeader:'decorative elements (not calculated as rows)',
-    footnote:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting.',
+    footnote:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting. Double-check the "pcs" count for small repeated elements (spikes, dots, buttons) — AI counting of many similar small details can be off.',
     generatePdfBtn:'Unlock Full Pattern + PDF — $4.99',
     lockedRowsTeaser:'Full row-by-row instructions unlock after payment',
     lockedDecoTeaser:'Full instructions unlock after payment',
@@ -164,7 +164,7 @@ const T = {
       sphere:[['diam','diameter, cm'],['extra','straight part, cm']],
       cylinder:[['diam','diameter, cm'],['extra','length, cm']],
       disc:[['diam','diameter, cm']],
-      cone:[['diam','diameter, cm'],['extra','taper, cm']],
+      cone:[['diam','diameter, cm'],['length','length, cm']],
       oval:[['length','length, cm'],['width','width, cm']],
       panel:[['length','width, cm'],['width','height, cm']]
     },
@@ -190,7 +190,7 @@ const T = {
     rounds:'рядов:', maxSt:'петель макс:', pcs:'шт',
     showRows:'показать ряды', hideRows:'скрыть ряды',
     decorHeader:'декоративные элементы (без расчёта рядов)',
-    footnote:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием.',
+    footnote:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием. Перепроверьте количество ("шт") для мелких повторяющихся деталей (шипы, точки, пуговицы) — AI может ошибиться в счёте, если таких деталей много.',
     generatePdfBtn:'Разблокировать схему + PDF — $4.99',
     lockedRowsTeaser:'Полная построчная раскладка открывается после оплаты',
     lockedDecoTeaser:'Полная инструкция открывается после оплаты',
@@ -208,7 +208,7 @@ const T = {
       sphere:[['diam','диаметр, см'],['extra','прямая часть, см']],
       cylinder:[['diam','диаметр, см'],['extra','длина, см']],
       disc:[['diam','диаметр, см']],
-      cone:[['diam','диаметр, см'],['extra','сужение, см']],
+      cone:[['diam','диаметр, см'],['length','длина, см']],
       oval:[['length','длина, см'],['width','ширина, см']],
       panel:[['length','ширина, см'],['width','высота, см']]
     },
@@ -234,7 +234,7 @@ const T = {
     rounds:'рядів:', maxSt:'максимум петель:', pcs:'шт',
     showRows:'показати ряди', hideRows:'сховати ряди',
     decorHeader:'декоративні елементи (без розрахунку рядів)',
-    footnote:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням.',
+    footnote:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням. Перевірте кількість ("шт") для дрібних деталей, що повторюються (шипи, крапки, ґудзики) — AI може помилитися в підрахунку, якщо таких деталей багато.',
     generatePdfBtn:'Розблокувати схему + PDF — $4.99',
     lockedRowsTeaser:'Повна розкладка по рядах відкривається після оплати',
     lockedDecoTeaser:'Повна інструкція відкривається після оплати',
@@ -252,7 +252,7 @@ const T = {
       sphere:[['diam','діаметр, см'],['extra','пряма частина, см']],
       cylinder:[['diam','діаметр, см'],['extra','довжина, см']],
       disc:[['diam','діаметр, см']],
-      cone:[['diam','діаметр, см'],['extra','звуження, см']],
+      cone:[['diam','діаметр, см'],['length','довжина, см']],
       oval:[['length','довжина, см'],['width','ширина, см']],
       panel:[['length','ширина, см'],['width','висота, см']]
     },
@@ -362,12 +362,22 @@ function computePart(p, stg, rowg, lang){
   for(let i=2;i<=incRounds;i++) rounds.push({n:n++, text:incText(i,lang)+' ('+(6*i)+')'});
   if(p.type==='disc') return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
 
+  if(p.type==='cone'){
+    let decreaseCount = 0;
+    for(let i=incRounds;i>=2;i-=2) decreaseCount++;
+    const fixedRows = (incRounds-1) + decreaseCount;
+    const targetRows = Math.max(fixedRows, Math.round((p.length||0)*rowPerCm));
+    const straight = targetRows - fixedRows;
+    for(let j=0;j<straight;j++) rounds.push({n:n++, text:aroundText(maxSt,lang)});
+    for(let i=incRounds;i>=2;i-=2) rounds.push({n:n++, text:decText(i,lang)+' ('+(6*(i-1))+')'});
+    return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
+  }
+
   const straight = Math.max(0, Math.round((p.extra||0)*rowPerCm));
   for(let j=0;j<straight;j++) rounds.push({n:n++, text:aroundText(maxSt,lang)});
   if(p.type==='cylinder') return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
 
   if(p.type==='sphere'){ for(let i=incRounds;i>=2;i--) rounds.push({n:n++, text:decText(i,lang)+' ('+(6*(i-1))+')'}); }
-  else if(p.type==='cone'){ for(let i=incRounds;i>=2;i-=2) rounds.push({n:n++, text:decText(i,lang)+' ('+(6*(i-1))+')'}); }
   return {rounds, maxSt, total:rounds.length, height:(rounds.length/rowPerCm).toFixed(1)};
 }
 
@@ -609,6 +619,8 @@ analyzeBtn.addEventListener('click', async function(){
     'If more than one image is provided, they are different angles (front/back/side) of the exact same single toy, not separate toys — cross-reference all of them together to identify parts that are not visible from a single angle (e.g. spikes or ridges along the back, tail shape, wings seen from behind). ' +
     'Ignore background props (baskets, accessories not on the toy itself) — describe only the main character. ' +
     'Identify all visually distinct body parts: head, body, ears, arms, legs, tail, muzzle, any protrusions. ' +
+    'For complex appendages that look like they are built from multiple attached pieces (e.g. dragon/bat-style wings with separate rib or finger pieces plus a webbing panel between them, layered fins, multi-piece crests), list each visually distinct sub-piece as its own part rather than combining the whole appendage into a single oval or panel — only treat it as one part if it genuinely looks like one continuous piece with no separate seams or attachment points. ' +
+    'When counting repeated small elements (spikes, dots, ridges, buttons, etc.), count each physical element exactly once — if the same elements are visible across multiple angle photos, do not double-count them; count carefully one by one rather than estimating, and look closely at clustered or partially overlapping elements. ' +
     'Classify each by the closest primitive: sphere (round part), cylinder (elongated tube with even diameter), ' +
     'disc (flat round element), cone (tapering part), oval (flat elongated part — length clearly greater than width, e.g. animal ears), ' +
     'panel (flat rectangular piece worked in rows back-and-forth, not in the round — use for separate garment-like pieces such as a vest, cape or onesie if it looks like an attached layer rather than part of the body). ' +
@@ -618,7 +630,7 @@ analyzeBtn.addEventListener('click', async function(){
     'Respond ONLY with valid JSON, no markdown, no preamble, exactly matching this schema: ' +
     '{"parts":[{"name":"string","type":"sphere|cylinder|disc|cone|oval|panel","count":integer,' +
     '"diam_ratio":number 0.02-1 (for sphere/cylinder/disc/cone — diameter as a fraction of toy height),' +
-    '"length_ratio":number 0-1 (for sphere/cylinder/cone — extra straight length as a fraction of height; for oval — long axis; for panel — width as a fraction of height),' +
+    '"length_ratio":number 0-1 (for sphere/cylinder — extra straight length as a fraction of height; for cone — the total length of the tapering part as a fraction of toy height; for oval — long axis; for panel — width as a fraction of height),' +
     '"width_ratio":number 0.02-1 (for oval — short axis; for panel — height as a fraction of toy height)}],' +
     '"decorations":[{"name":"string","instruction":"brief 1-2 sentence construction note"}]}';
 
@@ -652,6 +664,10 @@ analyzeBtn.addEventListener('click', async function(){
         base.length = r2(Math.max(0.5, (p.length_ratio||0.2) * totalHeight));
         base.width = r2(Math.max(0.5, (p.width_ratio||0.1) * totalHeight));
         base.diam = 0; base.extra = 0;
+      } else if(type==='cone'){
+        base.diam = r2(Math.max(0.5, (p.diam_ratio||0.2) * totalHeight));
+        base.length = r2(Math.max(0.5, (p.length_ratio||0.3) * totalHeight));
+        base.extra = 0; base.width = 1.5;
       } else {
         base.diam = r2(Math.max(0.5, (p.diam_ratio||0.2) * totalHeight));
         base.extra = r2(Math.max(0, (p.length_ratio||0) * totalHeight));
