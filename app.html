@@ -31,7 +31,10 @@
   .btn-primary{background:var(--accent); color:#fff; width:100%;}
   .btn-primary:disabled{background:#D8CFC2; cursor:not-allowed;}
   .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink); font-size:13px; padding:9px 14px;}
-  #preview{max-width:100%; max-height:220px; border-radius:10px; margin-top:10px; display:none;}
+  #preview-grid{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .preview-thumb{position:relative; width:90px; height:90px;}
+  .preview-thumb img{width:90px; height:90px; object-fit:cover; border-radius:8px; border:1px solid var(--line); display:block;}
+  .preview-thumb .rm-preview{position:absolute; top:-7px; right:-7px; background:#fff; border:1px solid var(--line); border-radius:50%; width:20px; height:20px; font-size:12px; cursor:pointer; line-height:1; padding:0; color:var(--ink-2);}
   .status{font-size:13px; color:var(--ink-2); margin-top:10px; min-height:18px;}
   .part{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
   .ptop{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
@@ -78,8 +81,9 @@
       <label class="btn-ghost" id="t-choosefile" for="file" style="cursor:pointer; white-space:nowrap;"></label>
       <span id="filename-display" style="font-size:13px; color:var(--ink-2);"></span>
     </div>
-    <input type="file" id="file" accept="image/*" style="position:absolute; width:1px; height:1px; opacity:0; overflow:hidden;" />
-    <img id="preview" />
+    <input type="file" id="file" accept="image/*" multiple style="position:absolute; width:1px; height:1px; opacity:0; overflow:hidden;" />
+    <div id="preview-grid"></div>
+    <p class="note" id="t-photohint" style="margin-top:6px;"></p>
 
     <div style="height:12px;"></div>
     <div class="row">
@@ -127,12 +131,14 @@ const T = {
     langName:'EN',
     title:'Photo → Amigurumi Parts',
     sub:'Fell in love with someone\u2019s toy? Upload a photo or sketch — get a ready-to-use crochet pattern in minutes.',
-    photoLabel:'Photo or sketch of the item',
+    photoLabel:'Photo(s) or sketch of the item (up to 3)',
+    photoHint:'Add front + back (and side, if you like) for toys with details on every side — spikes, wings, a tail. One photo still works fine for simpler toys.',
     heightLabel:'Desired toy height, cm',
     gaugeLabel:'Stitches / rows per 10 cm',
     analyzeBtn:'Create pattern',
-    chooseFile:'Choose file',
-    noFileChosen:'No file chosen',
+    chooseFile:'Choose photos',
+    noFileChosen:'No files chosen',
+    filesChosenText:(n)=>n+' photo'+(n>1?'s':'')+' selected',
     addLabel:'add a part manually',
     namePlaceholder:'name',
     addBtn:'+ add',
@@ -169,12 +175,14 @@ const T = {
     langName:'RU',
     title:'Фото → детали для амигуруми',
     sub:'Понравилась какая-то игрушка? Загрузите её фото или эскиз и получите готовую схему для вязания за пару минут.',
-    photoLabel:'Фото или эскиз изделия',
+    photoLabel:'Фото или эскиз изделия (до 3 шт.)',
+    photoHint:'Добавьте вид спереди и сзади (и сбоку, по желанию) для игрушек с деталями со всех сторон — шипы, крылья, хвост. Для простых игрушек хватит и одного фото.',
     heightLabel:'Желаемый рост игрушки, см',
     gaugeLabel:'Петель / рядов на 10 см',
     analyzeBtn:'Создать схему',
-    chooseFile:'Выберите файл',
-    noFileChosen:'Файл не выбран',
+    chooseFile:'Выберите фото',
+    noFileChosen:'Файлы не выбраны',
+    filesChosenText:(n)=>'Выбрано фото: '+n,
     addLabel:'добавить деталь вручную',
     namePlaceholder:'название',
     addBtn:'+ добавить',
@@ -211,12 +219,14 @@ const T = {
     langName:'UA',
     title:'Фото → деталі для амігурумі',
     sub:'Сподобалася чиясь іграшка? Завантажте фото або ескіз — і отримайте готову схему для в’язання за кілька хвилин.',
-    photoLabel:'Фото або ескіз виробу',
+    photoLabel:'Фото або ескіз виробу (до 3 шт.)',
+    photoHint:'Додайте вигляд спереду та ззаду (і збоку, за бажанням) для іграшок з деталями з усіх боків — шипи, крила, хвіст. Для простих іграшок достатньо й одного фото.',
     heightLabel:'Бажаний зріст іграшки, см',
     gaugeLabel:'Петель / рядів на 10 см',
     analyzeBtn:'Створити схему',
-    chooseFile:'Виберіть файл',
-    noFileChosen:'Файл не вибрано',
+    chooseFile:'Виберіть фото',
+    noFileChosen:'Файли не вибрано',
+    filesChosenText:(n)=>'Вибрано фото: '+n,
     addLabel:'додати деталь вручну',
     namePlaceholder:'назва',
     addBtn:'+ додати',
@@ -253,9 +263,9 @@ const T = {
 
 let currentLang = 'en';
 let resultUnlocked = false;
-let selectedFileName = null;
 let lastPartsCount = null, lastDecorCount = null;
-let imageBase64 = null, imageMediaType = null;
+let images = []; // {base64, mediaType, dataUrl}
+const MAX_IMAGES = 3;
 let parts = [];
 let decorations = [];
 let openIdx = null;
@@ -374,8 +384,9 @@ function setLang(lang){
   document.getElementById('t-title').textContent = t.title;
   document.getElementById('t-sub').textContent = t.sub;
   document.getElementById('t-photolabel').textContent = t.photoLabel;
+  document.getElementById('t-photohint').textContent = t.photoHint;
   document.getElementById('t-choosefile').textContent = t.chooseFile;
-  document.getElementById('filename-display').textContent = selectedFileName || t.noFileChosen;
+  document.getElementById('filename-display').textContent = images.length ? t.filesChosenText(images.length) : t.noFileChosen;
   document.getElementById('t-heightlabel').textContent = t.heightLabel;
   document.getElementById('t-gaugelabel').textContent = t.gaugeLabel;
   document.getElementById('analyze').textContent = t.analyzeBtn;
@@ -480,24 +491,50 @@ function renderParts(){
 }
 
 const fileInput = document.getElementById('file');
-const preview = document.getElementById('preview');
 const analyzeBtn = document.getElementById('analyze');
 const statusEl = document.getElementById('status');
 
+function renderPreviews(){
+  const grid = document.getElementById('preview-grid');
+  grid.innerHTML = images.map(function(img, i){
+    return '<div class="preview-thumb"><img src="'+img.dataUrl+'"><button type="button" class="rm-preview" data-idx="'+i+'">×</button></div>';
+  }).join('');
+  grid.querySelectorAll('.rm-preview').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      images.splice(parseInt(btn.dataset.idx, 10), 1);
+      renderPreviews();
+      updateFilenameDisplay();
+      analyzeBtn.disabled = images.length === 0;
+    });
+  });
+}
+
+function updateFilenameDisplay(){
+  const t = T[currentLang];
+  document.getElementById('filename-display').textContent = images.length ? t.filesChosenText(images.length) : t.noFileChosen;
+}
+
 fileInput.addEventListener('change', () => {
-  const f = fileInput.files[0];
-  if(!f) return;
-  imageMediaType = f.type;
-  selectedFileName = f.name;
-  document.getElementById('filename-display').textContent = selectedFileName;
-  const reader = new FileReader();
-  reader.onload = () => {
-    imageBase64 = reader.result.split(',')[1];
-    preview.src = reader.result;
-    preview.style.display = 'block';
-    analyzeBtn.disabled = false;
-  };
-  reader.readAsDataURL(f);
+  const files = Array.from(fileInput.files || []).slice(0, MAX_IMAGES);
+  if(!files.length) return;
+  let loaded = 0;
+  const startIdx = images.length;
+  const batch = new Array(files.length);
+  files.forEach((f, idx) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      batch[idx] = { base64: reader.result.split(',')[1], mediaType: f.type, dataUrl: reader.result };
+      loaded++;
+      if(loaded === files.length){
+        images = images.concat(batch).slice(0, MAX_IMAGES);
+        renderPreviews();
+        updateFilenameDisplay();
+        analyzeBtn.disabled = images.length === 0;
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+  fileInput.value = '';
 });
 
 document.getElementById('add-part-btn').addEventListener('click', function(){
@@ -519,8 +556,10 @@ analyzeBtn.addEventListener('click', async function(){
   // Если нет — не тратим полноценный (дорогой) вызов анализа и честно сообщаем об этом.
   statusEl.textContent = t.checkingPhoto;
   const checkSystem = 'You assess whether a photo or sketch is suitable for automatically generating an amigurumi crochet pattern from it. ' +
-    'Mark NOT suitable if: the image is too dark, blurry, or low-quality to make out the shape; the main subject is largely cropped or occluded; ' +
+    'If more than one image is provided, they show different angles (e.g. front, back, side) of the exact same single toy — judge the set together, not each image in isolation. ' +
+    'Mark NOT suitable if: the image(s) are too dark, blurry, or low-quality to make out the shape; the main subject is largely cropped or occluded; ' +
     'the image does not show a toy, plush, or a clear sketch/drawing of an object to recreate (e.g. random scenery, people, screenshots, unrelated products, text-only images); ' +
+    'multiple images clearly show different, unrelated objects rather than angles of one toy; ' +
     'or there is no single clear main subject to reconstruct. Otherwise mark suitable. ' +
     'Respond ONLY with valid JSON, no markdown, no preamble: {"suitable": true|false, "reason": "if not suitable, one short sentence in ' + t.promptLang + ' explaining why; empty string if suitable"}';
 
@@ -534,10 +573,9 @@ analyzeBtn.addEventListener('click', async function(){
         system: checkSystem,
         messages: [{
           role: 'user',
-          content: [
-            {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
-            {type:'text', text:'Is this photo suitable for generating an amigurumi pattern?'}
-          ]
+          content: images.map(function(img){
+            return {type:'image', source:{type:'base64', media_type:img.mediaType, data:img.base64}};
+          }).concat([{type:'text', text: images.length>1 ? 'These photos show different angles of the same toy. Is this toy suitable for generating an amigurumi pattern?' : 'Is this photo suitable for generating an amigurumi pattern?'}])
         }]
       })
     });
@@ -568,6 +606,7 @@ analyzeBtn.addEventListener('click', async function(){
   statusEl.textContent = t.analyzing;
 
   const system = 'You help break down a photo or sketch of a crocheted amigurumi toy into geometric primitives for pattern calculation. ' +
+    'If more than one image is provided, they are different angles (front/back/side) of the exact same single toy, not separate toys — cross-reference all of them together to identify parts that are not visible from a single angle (e.g. spikes or ridges along the back, tail shape, wings seen from behind). ' +
     'Ignore background props (baskets, accessories not on the toy itself) — describe only the main character. ' +
     'Identify all visually distinct body parts: head, body, ears, arms, legs, tail, muzzle, any protrusions. ' +
     'Classify each by the closest primitive: sphere (round part), cylinder (elongated tube with even diameter), ' +
@@ -593,10 +632,9 @@ analyzeBtn.addEventListener('click', async function(){
         system: system,
         messages: [{
           role: 'user',
-          content: [
-            {type:'image', source:{type:'base64', media_type:imageMediaType, data:imageBase64}},
-            {type:'text', text:'Break this toy down into amigurumi crochet parts.'}
-          ]
+          content: images.map(function(img){
+            return {type:'image', source:{type:'base64', media_type:img.mediaType, data:img.base64}};
+          }).concat([{type:'text', text: images.length>1 ? 'These photos show different angles of the same toy — use all of them together. Break this toy down into amigurumi crochet parts.' : 'Break this toy down into amigurumi crochet parts.'}])
         }]
       })
     });
@@ -643,7 +681,8 @@ function buildPdfPayload(){
   const stg = parseFloat(document.getElementById('stg').value)||16;
   const rowg = parseFloat(document.getElementById('rowg').value)||14;
   const height = parseFloat(document.getElementById('height').value)||15;
-  return { lang: currentLang, height, stg, rowg, title: T[currentLang].patternTitle, parts, decorations, photoBase64: imageBase64, photoMediaType: imageMediaType };
+  const cover = images[0] || null;
+  return { lang: currentLang, height, stg, rowg, title: T[currentLang].patternTitle, parts, decorations, photoBase64: cover ? cover.base64 : null, photoMediaType: cover ? cover.mediaType : null };
 }
 
 async function downloadPdf(payload, statusNode){
