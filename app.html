@@ -63,6 +63,8 @@
   .locked-teaser{background:var(--surface-1,#F7F5F0); border:1px dashed var(--line); border-radius:8px; padding:8px 10px; margin-top:8px; font-size:12px; color:var(--ink-2); text-align:center;}
   .rm-btn{background:transparent; border:none; color:var(--ink-2); font-size:16px; padding:2px 6px;}
   .note{font-size:12px; color:var(--ink-2); line-height:1.5;}
+  .warn-banner{background:#fff7e0; border:1px solid #f0cf7a; border-left:4px solid #d97706; border-radius:10px; padding:12px 14px; margin:12px 0 18px; font-size:13px; line-height:1.5; color:#7a4a00; display:flex; gap:10px; align-items:flex-start;}
+  .warn-banner .icon{flex-shrink:0; font-size:16px; line-height:1.4;}
   .deco{background:#fff; border:1px dashed var(--line); border-radius:12px; padding:10px 14px; margin-bottom:8px;}
   .deco b{font-size:13px;}
   .deco p{font-size:12px; color:var(--ink-2); margin:4px 0 0;}
@@ -74,6 +76,7 @@
   <div class="langbar" id="langbar"></div>
   <h1 id="t-title"></h1>
   <p class="sub" id="t-sub"></p>
+  <div class="warn-banner"><span class="icon">⚠️</span><span id="t-topwarning"></span></div>
 
   <div class="card">
     <label id="t-photolabel" for="file"></label>
@@ -122,7 +125,6 @@
     <button class="btn-primary" id="generate-pdf-btn"></button>
     <div class="status" id="pdf-status"></div>
   </div>
-  <p class="note" id="footnote"></p>
 </div>
 
 <script>
@@ -146,7 +148,7 @@ const T = {
     rounds:'rounds:', maxSt:'max stitches:', pcs:'pcs',
     showRows:'show rounds', hideRows:'hide rounds',
     decorHeader:'decorative elements (not calculated as rows)',
-    footnote:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting. Double-check the "pcs" count for small repeated elements (spikes, dots, buttons) — AI counting of many similar small details can be off.',
+    topWarning:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting. Double-check the "pcs" count for small repeated elements (spikes, dots, buttons) — AI counting of many similar small details can be off.',
     generatePdfBtn:'Unlock Full Pattern + PDF — $4.99',
     lockedRowsTeaser:'Full row-by-row instructions unlock after payment',
     lockedDecoTeaser:'Full instructions unlock after payment',
@@ -190,7 +192,7 @@ const T = {
     rounds:'рядов:', maxSt:'петель макс:', pcs:'шт',
     showRows:'показать ряды', hideRows:'скрыть ряды',
     decorHeader:'декоративные элементы (без расчёта рядов)',
-    footnote:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием. Перепроверьте количество ("шт") для мелких повторяющихся деталей (шипы, точки, пуговицы) — AI может ошибиться в счёте, если таких деталей много.',
+    topWarning:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием. Перепроверьте количество ("шт") для мелких повторяющихся деталей (шипы, точки, пуговицы) — AI может ошибиться в счёте, если таких деталей много.',
     generatePdfBtn:'Разблокировать схему + PDF — $4.99',
     lockedRowsTeaser:'Полная построчная раскладка открывается после оплаты',
     lockedDecoTeaser:'Полная инструкция открывается после оплаты',
@@ -234,7 +236,7 @@ const T = {
     rounds:'рядів:', maxSt:'максимум петель:', pcs:'шт',
     showRows:'показати ряди', hideRows:'сховати ряди',
     decorHeader:'декоративні елементи (без розрахунку рядів)',
-    footnote:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням. Перевірте кількість ("шт") для дрібних деталей, що повторюються (шипи, крапки, ґудзики) — AI може помилитися в підрахунку, якщо таких деталей багато.',
+    topWarning:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням. Перевірте кількість ("шт") для дрібних деталей, що повторюються (шипи, крапки, ґудзики) — AI може помилитися в підрахунку, якщо таких деталей багато.',
     generatePdfBtn:'Розблокувати схему + PDF — $4.99',
     lockedRowsTeaser:'Повна розкладка по рядах відкривається після оплати',
     lockedDecoTeaser:'Повна інструкція відкривається після оплати',
@@ -393,6 +395,7 @@ function setLang(lang){
 
   document.getElementById('t-title').textContent = t.title;
   document.getElementById('t-sub').textContent = t.sub;
+  document.getElementById('t-topwarning').textContent = t.topWarning;
   document.getElementById('t-photolabel').textContent = t.photoLabel;
   document.getElementById('t-photohint').textContent = t.photoHint;
   document.getElementById('t-choosefile').textContent = t.chooseFile;
@@ -496,7 +499,6 @@ function renderParts(){
     }).join('')
     : '';
 
-  document.getElementById('footnote').textContent = decorations.length || parts.length ? t.footnote : '';
   document.getElementById('pdf-section').style.display = parts.length ? 'block' : 'none';
 }
 
@@ -560,7 +562,6 @@ document.getElementById('add-part-btn').addEventListener('click', function(){
 analyzeBtn.addEventListener('click', async function(){
   const t = T[currentLang];
   analyzeBtn.disabled = true;
-  document.getElementById('footnote').textContent = '';
 
   // Шаг 1 — бесплатная и дешёвая проверка, годится ли фото вообще для разбора.
   // Если нет — не тратим полноценный (дорогой) вызов анализа и честно сообщаем об этом.
