@@ -39,7 +39,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { lang = 'ru', height = 15, stg = 16, rowg = 14, title = '', parts = [], decorations = [], photoBase64 = null, photoMediaType = '' } = req.body;
+    const { lang = 'ru', height = 15, stg = 16, rowg = 14, title = '', parts = [], decorations = [], photoBase64 = null, photoMediaType = '', personalizeText = '' } = req.body;
     const t = PDF_TEXT[lang] || PDF_TEXT.ru;
 
     const pdfDoc = await PDFDocument.create();
@@ -49,6 +49,11 @@ module.exports = async function handler(req, res) {
     const boldBytes = fs.readFileSync(path.join(process.cwd(), 'api/fonts/DejaVuSans-Bold.ttf'));
     const font = await pdfDoc.embedFont(regularBytes, { subset: true });
     const fontBold = await pdfDoc.embedFont(boldBytes, { subset: true });
+    let fontScript = fontBold;
+    try {
+      const scriptBytes = fs.readFileSync(path.join(process.cwd(), 'api/fonts/Caveat-Bold.ttf'));
+      fontScript = await pdfDoc.embedFont(scriptBytes, { subset: true });
+    } catch (e) { /* falls back to fontBold if the script font is missing */ }
 
     let embeddedPhoto = null;
     if (photoBase64) {
@@ -175,6 +180,21 @@ module.exports = async function handler(req, res) {
       ensureSpace(20);
       drawLine(d.name, { size: 10.5, useFont: fontBold, color: ACCENT, gap: 3 });
       drawWrapped(d.instruction, { size: 9, gap: 8 });
+    }
+
+    // ---------- Персонализация ----------
+    if (personalizeText && personalizeText.trim()) {
+      newPage();
+      drawLine(t.personalizeHeader, { size: 13, useFont: fontBold, gap: 8 });
+      drawWrapped(t.personalizeInstruction, { size: 9, color: INK2, gap: 20 });
+      const text = personalizeText.trim().slice(0, 20);
+      let stencilSize = 90;
+      while (stencilSize > 24 && fontScript.widthOfTextAtSize(text, stencilSize) > CONTENT_W - 20) stencilSize -= 2;
+      ensureSpace(stencilSize + 40);
+      const textWidth = fontScript.widthOfTextAtSize(text, stencilSize);
+      page.drawRectangle({ x: MARGIN, y: y - stencilSize - 30, width: CONTENT_W, height: stencilSize + 30, borderColor: LINE, borderWidth: 1, borderDashArray: [4, 4] });
+      page.drawText(text, { x: MARGIN + (CONTENT_W - textWidth) / 2, y: y - stencilSize + 8, size: stencilSize, font: fontScript, color: INK });
+      y -= stencilSize + 46;
     }
 
     const pdfBytes = await pdfDoc.save();

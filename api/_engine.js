@@ -91,13 +91,24 @@ function computePart(p, stg, rowg, lang) {
   for (let i = 2; i <= incRounds; i++) rounds.push({ n: n++, text: incText(i, lang) + ` (${6 * i})` });
   if (p.type === 'disc') return { rounds, maxSt, total: rounds.length };
 
+  if (p.type === 'cone') {
+    let decreaseCount = 0;
+    for (let i = incRounds; i >= 2; i -= 2) decreaseCount++;
+    const fixedRows = (incRounds - 1) + decreaseCount;
+    const rowPerCmC = rowg / 10;
+    const targetRows = Math.max(fixedRows, Math.round((p.length || 0) * rowPerCmC));
+    const straightC = targetRows - fixedRows;
+    for (let j = 0; j < straightC; j++) rounds.push({ n: n++, text: aroundText(maxSt, lang) });
+    for (let i = incRounds; i >= 2; i -= 2) rounds.push({ n: n++, text: decText(i, lang) + ` (${6 * (i - 1)})` });
+    return { rounds, maxSt, total: rounds.length };
+  }
+
   const rowPerCm = rowg / 10;
   const straight = Math.max(0, Math.round((p.extra || 0) * rowPerCm));
   for (let j = 0; j < straight; j++) rounds.push({ n: n++, text: aroundText(maxSt, lang) });
   if (p.type === 'cylinder') return { rounds, maxSt, total: rounds.length };
 
   if (p.type === 'sphere') { for (let i = incRounds; i >= 2; i--) rounds.push({ n: n++, text: decText(i, lang) + ` (${6 * (i - 1)})` }); }
-  else if (p.type === 'cone') { for (let i = incRounds; i >= 2; i -= 2) rounds.push({ n: n++, text: decText(i, lang) + ` (${6 * (i - 1)})` }); }
   return { rounds, maxSt, total: rounds.length };
 }
 
@@ -114,7 +125,8 @@ const PDF_TEXT = {
     disclaimer: 'This is a draft pattern generated automatically from a photo. Before crocheting, make a 10x10 cm gauge swatch and compare your gauge with the one below - part sizes are calculated for this exact gauge.',
     legend: [['magic ring', 'adjustable starting loop'], ['sc', 'single crochet'], ['ch', 'chain'], ['inc', '2 sc in one stitch'], ['dec', '2 stitches worked together'], ['(...)', 'stitch count at end of round']],
     typeLabels: { sphere: 'sphere', cylinder: 'cylinder', disc: 'disc', cone: 'cone', oval: 'oval', panel: 'panel' },
-    pc: 'pc(s)', maxSt: 'max stitches', footer: 'Generated automatically - for personal use'
+    pc: 'pc(s)', maxSt: 'max stitches', footer: 'Generated automatically - for personal use',
+    personalizeHeader: 'Personalization', personalizeInstruction: 'Trace this outline directly onto the fabric (chalk pencil or water-soluble marker work well), then stitch over it with backstitch or chain stitch in a contrasting yarn or embroidery floss.'
   },
   ru: {
     materialsHeader: 'Материалы и плотность вязания', legendHeader: 'Условные обозначения', partsHeader: 'Детали',
@@ -128,7 +140,8 @@ const PDF_TEXT = {
     disclaimer: 'Это черновая схема, сгенерированная автоматически по фото. Перед вязанием обязательно свяжите контрольный образец 10x10 см и сверьте свою плотность вязания с указанной ниже — размеры деталей рассчитаны именно под неё.',
     legend: [['КА', 'кольцо амигуруми'], ['сбн', 'столбик без накида'], ['вп', 'воздушная петля'], ['пр / прибавка', '2 сбн в одну петлю'], ['уб / убавка', '2 петли провязать вместе'], ['(…)', 'количество петель в конце ряда']],
     typeLabels: { sphere: 'шар', cylinder: 'цилиндр', disc: 'диск', cone: 'конус', oval: 'овал', panel: 'полотно' },
-    pc: 'шт', maxSt: 'максимум петель', footer: 'Сгенерировано автоматически - для личного использования'
+    pc: 'шт', maxSt: 'максимум петель', footer: 'Сгенерировано автоматически - для личного использования',
+    personalizeHeader: 'Персонализация', personalizeInstruction: 'Перенесите этот контур прямо на ткань (удобно использовать мелок для ткани или водорастворимый маркер), затем прошейте по контуру швом "назад иголку" или тамбурным швом (цепочкой) контрастной пряжей или мулине.'
   },
   uk: {
     materialsHeader: 'Матеріали і щільність в’язання', legendHeader: 'Умовні позначення', partsHeader: 'Деталі',
@@ -142,7 +155,8 @@ const PDF_TEXT = {
     disclaimer: 'Це чорнова схема, згенерована автоматично за фото. Перед в’язанням обов’язково зв’яжіть контрольний зразок 10x10 см і звірте свою щільність в’язання із зазначеною нижче — розміри деталей розраховані саме під неї.',
     legend: [['КА', 'кільце амігурумі'], ['ст.б/н', 'стовпчик без накиду'], ['п.п.', 'повітряна петля'], ['пр / прибавка', '2 ст.б/н в одну петлю'], ['уб / убавка', '2 петлі провязати разом'], ['(…)', 'кількість петель в кінці ряду']],
     typeLabels: { sphere: 'куля', cylinder: 'циліндр', disc: 'диск', cone: 'конус', oval: 'овал', panel: 'полотно' },
-    pc: 'шт', maxSt: 'максимум петель', footer: 'Згенеровано автоматично - для особистого використання'
+    pc: 'шт', maxSt: 'максимум петель', footer: 'Згенеровано автоматично - для особистого використання',
+    personalizeHeader: 'Персоналізація', personalizeInstruction: 'Перенесіть цей контур прямо на тканину (зручно використати крейду для тканини або водорозчинний маркер), потім прошийте по контуру швом "назад голку" або тамбурним швом (ланцюжком) контрастною пряжею чи мулине.'
   }
 };
 
