@@ -104,10 +104,11 @@
   /* ---------- Examples ---------- */
   .examples-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
   .example-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 14px 16px; box-shadow:0 10px 26px -16px rgba(58,38,24,0.18);}
-  .example-card .img-wrap{height:200px; border-radius:12px; overflow:hidden; background:var(--card-soft); display:flex; align-items:center; justify-content:center; margin-bottom:12px;}
-  .example-card img{width:100%; height:100%; object-fit:contain; display:block; cursor:zoom-in; transition:transform .3s ease;}
-  .example-card .img-wrap:hover img{transform:scale(1.08);}
-  .example-card .cap{font-size:12.5px; color:var(--ink-2); text-align:center; font-weight:500;}
+  .example-card .img-wrap{height:200px; border-radius:12px; overflow:hidden; background:var(--card-soft); position:relative; margin-bottom:12px;}
+  .example-card .ex-img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; cursor:zoom-in; transition:opacity .6s ease, transform .3s ease; opacity:0; pointer-events:none;}
+  .example-card .ex-img.active{opacity:1; pointer-events:auto;}
+  .example-card .img-wrap:hover .ex-img.active{transform:scale(1.08);}
+  .example-card .cap{font-size:12.5px; color:var(--ink-2); text-align:center; font-weight:500; transition:opacity .3s ease;}
 
   /* ---------- Content/social block ---------- */
   .content-block{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:3rem; display:flex; gap:2.5rem; align-items:center; box-shadow:0 20px 50px -24px rgba(58,38,24,0.2);}
@@ -257,10 +258,28 @@
     <span class="eyebrow-center">Примеры работ</span>
     <h2 class="section-title">Реальные результаты сервиса</h2>
     <p class="section-sub">Без постановочных картинок — то, что действительно получают пользователи</p>
-    <div class="examples-grid">
-      <div class="example-card"><div class="img-wrap"><img src="assets/example-snowman.png" alt="Пример: снеговик — эскиз и готовая вязаная игрушка"></div><div class="cap">Эскиз → готовая игрушка</div></div>
-      <div class="example-card"><div class="img-wrap"><img src="assets/example-cat-pumpkin.png" alt="Пример: кот-тыква — фото и готовая вязаная игрушка"></div><div class="cap">Фото → готовая игрушка</div></div>
-      <div class="example-card"><div class="img-wrap"><img src="assets/example-penguin.png" alt="Пример: пингвин — эскиз и готовая вязаная игрушка"></div><div class="cap">Эскиз → готовая игрушка</div></div>
+    <div class="examples-grid" id="examples-grid">
+      <div class="example-card">
+        <div class="img-wrap">
+          <img class="ex-img ex-a active" src="assets/example-snowman.png" alt="Пример: снеговик — эскиз и готовая вязаная игрушка">
+          <img class="ex-img ex-b" src="" alt="">
+        </div>
+        <div class="cap">Эскиз → готовая игрушка</div>
+      </div>
+      <div class="example-card">
+        <div class="img-wrap">
+          <img class="ex-img ex-a active" src="assets/example-cat-pumpkin.png" alt="Пример: кот-тыква — фото и готовая вязаная игрушка">
+          <img class="ex-img ex-b" src="" alt="">
+        </div>
+        <div class="cap">Фото → готовая игрушка</div>
+      </div>
+      <div class="example-card">
+        <div class="img-wrap">
+          <img class="ex-img ex-a active" src="assets/example-penguin.png" alt="Пример: пингвин с вышитым именем «Charlie» — эскиз и готовая игрушка">
+          <img class="ex-img ex-b" src="" alt="">
+        </div>
+        <div class="cap">С вышитым именем — функция персонализации</div>
+      </div>
     </div>
   </div>
 </section>
@@ -409,6 +428,50 @@ document.getElementById('login-modal').addEventListener('click', function(e){
   document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
   lightbox.addEventListener('click', function(e){ if(e.target === this) closeLightbox(); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
+})();
+
+// Examples carousel — each card cycles through its own set of photos in random order.
+// To add more photos to a card later: just add more {src, alt, cap} objects to its array below.
+(function(){
+  const exampleSets = [
+    [
+      {src:'assets/example-snowman.png', alt:'Пример: снеговик — эскиз и готовая вязаная игрушка', cap:'Эскиз → готовая игрушка'}
+    ],
+    [
+      {src:'assets/example-cat-pumpkin.png', alt:'Пример: кот-тыква — фото и готовая вязаная игрушка', cap:'Фото → готовая игрушка'}
+    ],
+    [
+      {src:'assets/example-penguin.png', alt:'Пример: пингвин с вышитым именем «Charlie» — эскиз и готовая игрушка', cap:'С вышитым именем — функция персонализации'}
+    ]
+  ];
+  const grid = document.getElementById('examples-grid');
+  if(!grid) return;
+  const cards = grid.querySelectorAll('.example-card');
+  cards.forEach(function(card, i){
+    const set = exampleSets[i];
+    if(!set || set.length < 2) return; // nothing to rotate yet — add more photos to exampleSets above
+    let current = 0;
+    let showingA = true;
+    const imgA = card.querySelector('.ex-a');
+    const imgB = card.querySelector('.ex-b');
+    const capEl = card.querySelector('.cap');
+    function tick(){
+      let next = current;
+      while(next === current) next = Math.floor(Math.random() * set.length);
+      current = next;
+      const item = set[current];
+      const incoming = showingA ? imgB : imgA;
+      const outgoing = showingA ? imgA : imgB;
+      incoming.src = item.src;
+      incoming.alt = item.alt;
+      incoming.classList.add('active');
+      outgoing.classList.remove('active');
+      showingA = !showingA;
+      capEl.style.opacity = '0';
+      setTimeout(function(){ capEl.textContent = item.cap; capEl.style.opacity = '1'; }, 300);
+    }
+    setInterval(tick, 4800 + i * 1400); // stagger so cards don't flip in sync
+  });
 })();
 </script>
 
