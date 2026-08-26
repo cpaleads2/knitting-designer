@@ -61,6 +61,7 @@
   .stat .l{font-size:12px; color:var(--ink-2);}
   .toggle{background:transparent; border:1px solid var(--line); font-size:11px; padding:4px 10px; margin-top:8px;}
   .locked-teaser{background:var(--surface-1,#F7F5F0); border:1px dashed var(--line); border-radius:8px; padding:8px 10px; margin-top:8px; font-size:12px; color:var(--ink-2); text-align:center;}
+  .free-preview-badge{background:#eafaf0; border:1px solid #b9e8cc; color:#1a7a45; border-radius:8px; padding:6px 10px; margin-bottom:8px; font-size:12px; font-weight:600; text-align:center;}
   .rm-btn{background:transparent; border:none; color:var(--ink-2); font-size:16px; padding:2px 6px;}
   .note{font-size:12px; color:var(--ink-2); line-height:1.5;}
   .warn-banner{background:#fff7e0; border:1px solid #f0cf7a; border-left:4px solid #d97706; border-radius:10px; padding:12px 14px; margin:12px 0 18px; font-size:13px; line-height:1.5; color:#7a4a00; display:flex; gap:10px; align-items:flex-start;}
@@ -160,6 +161,7 @@ const T = {
     topWarning:'Proportions are estimated from the photo — fields above are editable; check against a real gauge swatch before crocheting. Double-check the "pcs" count for small repeated elements (spikes, dots, buttons) — AI counting of many similar small details can be off.',
     generatePdfBtn:'Unlock Full Pattern + PDF — $4.99',
     lockedRowsTeaser:'Full row-by-row instructions unlock after payment',
+    freePreviewBadge:'Free preview — full instructions for this part',
     lockedDecoTeaser:'Full instructions unlock after payment',
     pdfGenerating:'Putting together your PDF…',
     pdfError:(msg)=>'Could not generate the PDF: '+msg,
@@ -206,6 +208,7 @@ const T = {
     topWarning:'Пропорции подобраны по фото приблизительно — поля выше можно редактировать вручную, сверьте с реальным образцом плотности перед вязанием. Перепроверьте количество ("шт") для мелких повторяющихся деталей (шипы, точки, пуговицы) — AI может ошибиться в счёте, если таких деталей много.',
     generatePdfBtn:'Разблокировать схему + PDF — $4.99',
     lockedRowsTeaser:'Полная построчная раскладка открывается после оплаты',
+    freePreviewBadge:'Бесплатный пример — полная раскладка этой детали',
     lockedDecoTeaser:'Полная инструкция открывается после оплаты',
     pdfGenerating:'Собираем PDF…',
     pdfError:(msg)=>'Не удалось создать PDF: '+msg,
@@ -252,6 +255,7 @@ const T = {
     topWarning:'Пропорції підібрані за фото приблизно — поля вище можна редагувати вручну, звірте з реальним зразком щільності перед в’язанням. Перевірте кількість ("шт") для дрібних деталей, що повторюються (шипи, крапки, ґудзики) — AI може помилитися в підрахунку, якщо таких деталей багато.',
     generatePdfBtn:'Розблокувати схему + PDF — $4.99',
     lockedRowsTeaser:'Повна розкладка по рядах відкривається після оплати',
+    freePreviewBadge:'Безкоштовний приклад — повна розкладка цієї деталі',
     lockedDecoTeaser:'Повна інструкція відкривається після оплати',
     pdfGenerating:'Збираємо PDF…',
     pdfError:(msg)=>'Не вдалося створити PDF: '+msg,
@@ -460,6 +464,9 @@ function renderParts(){
     if(resultUnlocked){
       rowsBlockHtml = '<button class="toggle" data-i="'+idx+'">'+(openIdx===idx?t.hideRows:t.showRows)+'</button>'+
         (openIdx===idx ? '<table><tbody>'+rowsHtml+'</tbody></table>' : '');
+    } else if(idx===0){
+      rowsBlockHtml = '<div class="free-preview-badge">✓ '+t.freePreviewBadge+'</div>'+
+        '<table><tbody>'+rowsHtml+'</tbody></table>';
     } else {
       const firstRowHtml = res.rounds[0] ? '<tr><td style="color:var(--ink-2);width:30px;">1</td><td>'+res.rounds[0].text+'</td></tr>' : '';
       rowsBlockHtml = '<table><tbody>'+firstRowHtml+'</tbody></table>'+

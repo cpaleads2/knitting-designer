@@ -76,7 +76,8 @@
   /* Before/after framed visual */
   .showcase{margin:3.5rem auto 0; max-width:760px; position:relative;}
   .showcase-frame{background:var(--card); border:1px solid var(--line); border-radius:22px; overflow:hidden; box-shadow:0 24px 60px -20px rgba(58,38,24,0.25); position:relative;}
-  .showcase-frame img{display:block; width:100%; height:auto;}
+  .showcase-frame img{display:block; width:100%; height:auto; cursor:zoom-in; transition:transform .3s ease;}
+  .showcase-frame:hover img{transform:scale(1.045);}
   .showcase-tag{position:absolute; top:18px; left:18px; background:var(--ink); color:#fff; font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:6px 14px; border-radius:999px;}
   .showcase-tag.right{left:auto; right:18px; background:var(--accent);}
 
@@ -104,7 +105,8 @@
   .examples-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
   .example-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 14px 16px; box-shadow:0 10px 26px -16px rgba(58,38,24,0.18);}
   .example-card .img-wrap{height:200px; border-radius:12px; overflow:hidden; background:var(--card-soft); display:flex; align-items:center; justify-content:center; margin-bottom:12px;}
-  .example-card img{width:100%; height:100%; object-fit:contain; display:block;}
+  .example-card img{width:100%; height:100%; object-fit:contain; display:block; cursor:zoom-in; transition:transform .3s ease;}
+  .example-card .img-wrap:hover img{transform:scale(1.08);}
   .example-card .cap{font-size:12.5px; color:var(--ink-2); text-align:center; font-weight:500;}
 
   /* ---------- Content/social block ---------- */
@@ -153,6 +155,12 @@
 
   /* ---------- Modal ---------- */
   .modal-overlay{display:none; position:fixed; inset:0; background:rgba(58,38,24,0.5); align-items:center; justify-content:center; z-index:100;}
+
+  .lightbox-overlay{display:none; position:fixed; inset:0; background:rgba(26,17,10,0.86); align-items:center; justify-content:center; z-index:200; padding:2rem; cursor:zoom-out;}
+  .lightbox-overlay.show{display:flex;}
+  .lightbox-overlay img{max-width:min(92vw,900px); max-height:88vh; border-radius:14px; box-shadow:0 30px 70px -20px rgba(0,0,0,0.6); cursor:default;}
+  .lightbox-close{position:absolute; top:22px; right:26px; width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.3); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .lightbox-close:hover{background:rgba(255,255,255,0.22);}
   .modal-overlay.show{display:flex;}
   .modal-box{background:#fff; border-radius:18px; padding:2.25rem; max-width:340px; text-align:center;}
   .modal-box h3{font-family:var(--font-display); font-size:20px; margin-bottom:0.5rem;}
@@ -368,6 +376,12 @@
   </div>
 </div>
 
+<!-- ================= LIGHTBOX: увеличенное фото ================= -->
+<div class="lightbox-overlay" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close" aria-label="Закрыть">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
 <script>
 document.getElementById('login-btn').addEventListener('click', function(){
   document.getElementById('login-modal').classList.add('show');
@@ -378,6 +392,24 @@ document.getElementById('modal-close').addEventListener('click', function(){
 document.getElementById('login-modal').addEventListener('click', function(e){
   if(e.target === this) this.classList.remove('show');
 });
+
+// Zoom / lightbox for showcase and example photos
+(function(){
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const zoomTargets = document.querySelectorAll('.showcase-frame img, .example-card img');
+  zoomTargets.forEach(function(img){
+    img.addEventListener('click', function(){
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightbox.classList.add('show');
+    });
+  });
+  function closeLightbox(){ lightbox.classList.remove('show'); lightboxImg.src=''; }
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', function(e){ if(e.target === this) closeLightbox(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
+})();
 </script>
 
 </body>
