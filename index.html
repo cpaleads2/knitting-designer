@@ -52,6 +52,18 @@
   nav a.navlink{font-size:14px; color:var(--ink-2); font-weight:500;}
   nav a.navlink:hover{color:var(--ink);}
   .header-actions{display:flex; align-items:center; gap:14px;}
+
+  .lang-switch{position:relative;}
+  .lang-btn{display:flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--line); border-radius:999px; padding:9px 14px; font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; font-family:var(--font-body);}
+  .lang-btn:hover{border-color:var(--ink-2);}
+  .lang-btn .globe{font-size:15px; line-height:1;}
+  .lang-btn .chevron{font-size:9px; color:var(--ink-2); margin-left:1px;}
+  .lang-menu{display:none; position:absolute; top:calc(100% + 8px); right:0; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 14px 34px -12px rgba(58,38,24,0.28); padding:6px; min-width:168px; z-index:60;}
+  .lang-menu.show{display:block;}
+  .lang-option{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; border-radius:8px; font-size:13.5px; cursor:pointer; color:var(--ink);}
+  .lang-option:hover{background:var(--card-soft);}
+  .lang-option .check{color:var(--accent); font-weight:700; font-size:13px;}
+  .lang-option .soon{font-size:10.5px; color:var(--ink-2); background:var(--card-soft); border-radius:999px; padding:2px 8px; font-weight:600;}
   .btn{display:inline-block; border-radius:999px; padding:11px 22px; font-size:14px; font-weight:600; cursor:pointer; border:none; font-family:var(--font-body);}
   .btn-primary{background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(185,112,47,0.28);}
   .btn-primary:hover{background:var(--accent-deep);}
@@ -194,6 +206,14 @@
       <a class="navlink" href="#faq">FAQ</a>
     </nav>
     <div class="header-actions">
+      <div class="lang-switch">
+        <button class="lang-btn" id="lang-btn"><span class="globe">🌐</span> RU <span class="chevron">▾</span></button>
+        <div class="lang-menu" id="lang-menu">
+          <div class="lang-option" data-lang="ru"><span>Русский</span><span class="check">✓</span></div>
+          <div class="lang-option" data-lang="en"><span>English</span><span class="soon">скоро</span></div>
+          <div class="lang-option" data-lang="uk"><span>Українська</span><span class="soon">скоро</span></div>
+        </div>
+      </div>
       <button class="btn btn-ghost" id="login-btn">Войти</button>
       <a class="btn btn-primary" href="app.html">Попробовать бесплатно</a>
     </div>
@@ -381,7 +401,6 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 CrochetLens</span>
-      <span>[EN / RU / UA — переключатель языка появится здесь]</span>
     </div>
   </div>
 </footer>
@@ -392,6 +411,15 @@
     <h3>Личный кабинет</h3>
     <p>В разработке — скоро будет доступен.</p>
     <button class="btn btn-primary" id="modal-close">Понятно</button>
+  </div>
+</div>
+
+<!-- ================= MODAL: Язык скоро будет доступен ================= -->
+<div class="modal-overlay" id="lang-modal">
+  <div class="modal-box">
+    <h3>Эта версия языка скоро появится</h3>
+    <p>Сейчас сайт доступен только на русском — мы работаем над остальными языками.</p>
+    <button class="btn btn-primary" id="lang-modal-close">Понятно</button>
   </div>
 </div>
 
@@ -411,6 +439,31 @@ document.getElementById('modal-close').addEventListener('click', function(){
 document.getElementById('login-modal').addEventListener('click', function(e){
   if(e.target === this) this.classList.remove('show');
 });
+
+// Language switcher
+(function(){
+  const btn = document.getElementById('lang-btn');
+  const menu = document.getElementById('lang-menu');
+  const langModal = document.getElementById('lang-modal');
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('show');
+  });
+  document.addEventListener('click', function(){ menu.classList.remove('show'); });
+  menu.querySelectorAll('.lang-option').forEach(function(opt){
+    opt.addEventListener('click', function(e){
+      e.stopPropagation();
+      menu.classList.remove('show');
+      if(opt.dataset.lang !== 'ru'){ langModal.classList.add('show'); }
+    });
+  });
+  document.getElementById('lang-modal-close').addEventListener('click', function(){
+    langModal.classList.remove('show');
+  });
+  langModal.addEventListener('click', function(e){
+    if(e.target === this) this.classList.remove('show');
+  });
+})();
 
 // Zoom / lightbox for showcase and example photos
 (function(){
