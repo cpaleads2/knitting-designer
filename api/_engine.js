@@ -126,7 +126,8 @@ const PDF_TEXT = {
     legend: [['magic ring', 'adjustable starting loop'], ['sc', 'single crochet'], ['ch', 'chain'], ['inc', '2 sc in one stitch'], ['dec', '2 stitches worked together'], ['(...)', 'stitch count at end of round']],
     typeLabels: { sphere: 'sphere', cylinder: 'cylinder', disc: 'disc', cone: 'cone', oval: 'oval', panel: 'panel' },
     pc: 'pc(s)', maxSt: 'max stitches', footer: 'Generated automatically - for personal use',
-    personalizeHeader: 'Personalization', personalizeInstruction: 'Trace this outline directly onto the fabric (chalk pencil or water-soluble marker work well), then stitch over it with backstitch or chain stitch in a contrasting yarn or embroidery floss.'
+    personalizeHeader: 'Personalization', personalizeInstruction: 'Trace this outline directly onto the fabric (chalk pencil or water-soluble marker work well), then stitch over it with backstitch or chain stitch in a contrasting yarn or embroidery floss.',
+    frontPhotoLabel: 'Front', backPhotoLabel: 'Back'
   },
   ru: {
     materialsHeader: 'Материалы и плотность вязания', legendHeader: 'Условные обозначения', partsHeader: 'Детали',
@@ -141,7 +142,8 @@ const PDF_TEXT = {
     legend: [['КА', 'кольцо амигуруми'], ['сбн', 'столбик без накида'], ['вп', 'воздушная петля'], ['пр / прибавка', '2 сбн в одну петлю'], ['уб / убавка', '2 петли провязать вместе'], ['(…)', 'количество петель в конце ряда']],
     typeLabels: { sphere: 'шар', cylinder: 'цилиндр', disc: 'диск', cone: 'конус', oval: 'овал', panel: 'полотно' },
     pc: 'шт', maxSt: 'максимум петель', footer: 'Сгенерировано автоматически - для личного использования',
-    personalizeHeader: 'Персонализация', personalizeInstruction: 'Перенесите этот контур прямо на ткань (удобно использовать мелок для ткани или водорастворимый маркер), затем прошейте по контуру швом "назад иголку" или тамбурным швом (цепочкой) контрастной пряжей или мулине.'
+    personalizeHeader: 'Персонализация', personalizeInstruction: 'Перенесите этот контур прямо на ткань (удобно использовать мелок для ткани или водорастворимый маркер), затем прошейте по контуру швом "назад иголку" или тамбурным швом (цепочкой) контрастной пряжей или мулине.',
+    frontPhotoLabel: 'Спереди', backPhotoLabel: 'Сзади'
   },
   uk: {
     materialsHeader: 'Матеріали і щільність в’язання', legendHeader: 'Умовні позначення', partsHeader: 'Деталі',
@@ -156,7 +158,8 @@ const PDF_TEXT = {
     legend: [['КА', 'кільце амігурумі'], ['ст.б/н', 'стовпчик без накиду'], ['п.п.', 'повітряна петля'], ['пр / прибавка', '2 ст.б/н в одну петлю'], ['уб / убавка', '2 петлі провязати разом'], ['(…)', 'кількість петель в кінці ряду']],
     typeLabels: { sphere: 'куля', cylinder: 'циліндр', disc: 'диск', cone: 'конус', oval: 'овал', panel: 'полотно' },
     pc: 'шт', maxSt: 'максимум петель', footer: 'Згенеровано автоматично - для особистого використання',
-    personalizeHeader: 'Персоналізація', personalizeInstruction: 'Перенесіть цей контур прямо на тканину (зручно використати крейду для тканини або водорозчинний маркер), потім прошийте по контуру швом "назад голку" або тамбурним швом (ланцюжком) контрастною пряжею чи мулине.'
+    personalizeHeader: 'Персоналізація', personalizeInstruction: 'Перенесіть цей контур прямо на тканину (зручно використати крейду для тканини або водорозчинний маркер), потім прошийте по контуру швом "назад голку" або тамбурним швом (ланцюжком) контрастною пряжею чи мулине.',
+    frontPhotoLabel: 'Спереду', backPhotoLabel: 'Ззаду'
   }
 };
 

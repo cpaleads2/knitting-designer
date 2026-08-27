@@ -1,4 +1,4 @@
-const { PDFDocument, rgb } = require('pdf-lib');
+const { PDFDocument, rgb, pushGraphicsState, popGraphicsState, rectangle, clip, endPath } = require('pdf-lib');
 const fontkit = require('@pdf-lib/fontkit');
 const fs = require('fs');
 const path = require('path');
@@ -9,10 +9,16 @@ const PAGE_W = 612, PAGE_H = 792;
 const MARGIN = 50;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
-const INK = rgb(0x24 / 255, 0x1F / 255, 0x1A / 255);
-const INK2 = rgb(0x6B / 255, 0x64 / 255, 0x59 / 255);
-const ACCENT = rgb(0xB5 / 255, 0x50 / 255, 0x2C / 255);
-const LINE = rgb(0xE4 / 255, 0xDF / 255, 0xD5 / 255);
+// Palette matching the CrochetLens website
+const INK = rgb(0x3A / 255, 0x26 / 255, 0x18 / 255);
+const INK2 = rgb(0x8C / 255, 0x75 / 255, 0x61 / 255);
+const ACCENT = rgb(0xB9 / 255, 0x70 / 255, 0x2F / 255);
+const ACCENT_DEEP = rgb(0x8F / 255, 0x4E / 255, 0x1E / 255);
+const GOLD = rgb(0x9C / 255, 0x7A / 255, 0x34 / 255);
+const GOLD_BG = rgb(0xF1 / 255, 0xE7 / 255, 0xCE / 255);
+const LINE = rgb(0xEA / 255, 0xD9 / 255, 0xC0 / 255);
+const CARD_BG = rgb(0xFD / 255, 0xF8 / 255, 0xF1 / 255);
+const WHITE = rgb(1, 1, 1);
 const DISCLAIMER_BG = rgb(0xFA / 255, 0xEE / 255, 0xDA / 255);
 const DISCLAIMER_TEXT = rgb(0x85 / 255, 0x4F / 255, 0x0B / 255);
 
@@ -39,7 +45,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { lang = 'ru', height = 15, stg = 16, rowg = 14, title = '', parts = [], decorations = [], photoBase64 = null, photoMediaType = '', personalizeText = '' } = req.body;
+    const { lang = 'ru', height = 15, stg = 16, rowg = 14, title = '', parts = [], decorations = [], photoBase64 = null, photoMediaType = '', images = [], personalizeText = '' } = req.body;
     const t = PDF_TEXT[lang] || PDF_TEXT.ru;
 
     const pdfDoc = await PDFDocument.create();
@@ -55,16 +61,35 @@ module.exports = async function handler(req, res) {
       fontScript = await pdfDoc.embedFont(scriptBytes, { subset: true });
     } catch (e) { /* falls back to fontBold if the script font is missing */ }
 
-    let embeddedPhoto = null;
-    if (photoBase64) {
+    // Embed every provided source photo once, reused for the cover and for per-part crops.
+    const sourceImages = (images && images.length ? images : (photoBase64 ? [{ base64: photoBase64, mediaType: photoMediaType }] : []));
+    const embeddedImages = [];
+    for (const img of sourceImages) {
       try {
-        const imgBytes = Buffer.from(photoBase64, 'base64');
-        embeddedPhoto = photoMediaType.includes('png')
-          ? await pdfDoc.embedPng(imgBytes)
-          : await pdfDoc.embedJpg(imgBytes);
+        const bytes = Buffer.from(img.base64, 'base64');
+        const embedded = (img.mediaType || '').includes('png') ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes);
+        embeddedImages.push(embedded);
       } catch (e) {
-        embeddedPhoto = null;
+        embeddedImages.push(null);
       }
+    }
+    const embeddedPhoto = embeddedImages[0] || null;
+
+    function drawCroppedThumb(pageRef, embeddedImg, bbox, boxX, boxTopY, boxW, boxH) {
+      if (!embeddedImg || !bbox) return false;
+      const imgW = embeddedImg.width, imgH = embeddedImg.height;
+      const cropX = bbox.x * imgW, cropY = bbox.y * imgH;
+      const cropW = Math.max(1, bbox.w * imgW), cropH = Math.max(1, bbox.h * imgH);
+      const scale = Math.max(boxW / cropW, boxH / cropH);
+      const drawW = imgW * scale, drawH = imgH * scale;
+      const imgX = boxX - cropX * scale;
+      const imgY = boxTopY - drawH + cropY * scale;
+      const boxBottom = boxTopY - boxH;
+      pageRef.pushOperators(pushGraphicsState());
+      pageRef.pushOperators(rectangle(boxX, boxBottom, boxW, boxH), clip(), endPath());
+      pageRef.drawImage(embeddedImg, { x: imgX, y: imgY, width: drawW, height: drawH });
+      pageRef.pushOperators(popGraphicsState());
+      return true;
     }
 
     let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
@@ -92,110 +117,241 @@ module.exports = async function handler(req, res) {
       y -= gap;
     }
     function spacer(h) { y -= h; }
+    function centeredText(text, cy, { size = 10, useFont = fontBold, color = WHITE, cx = 0 } = {}) {
+      const w = useFont.widthOfTextAtSize(text, size);
+      page.drawText(text, { x: cx - w / 2, y: cy - size * 0.36, size, font: useFont, color });
+    }
+
+    // ---------- Простые векторные иконки ----------
+    function iconYarn(cx, cy, r, color) {
+      page.drawCircle({ x: cx, y: cy, size: r, color });
+      page.drawCircle({ x: cx - r * 0.32, y: cy + r * 0.32, size: r * 0.34, color: WHITE, opacity: 0.35 });
+      for (const dx of [-0.45, 0, 0.45]) {
+        page.drawEllipse({ x: cx, y: cy, xScale: r * 0.9, yScale: r * (0.32 + Math.abs(dx) * 0.2), rotate: { angle: (dx * 70), type: 'degrees' }, borderColor: WHITE, borderWidth: 0.6, borderOpacity: 0.5 });
+      }
+    }
+    function iconHook(cx, cy, s, color) {
+      page.drawLine({ start: { x: cx - s * 0.6, y: cy - s * 0.6 }, end: { x: cx + s * 0.5, y: cy + s * 0.6 }, thickness: 1.6, color });
+      page.drawCircle({ x: cx + s * 0.62, y: cy + s * 0.68, size: s * 0.22, borderColor: color, borderWidth: 1.4 });
+    }
+    function iconCloud(cx, cy, s, color) {
+      page.drawCircle({ x: cx - s * 0.4, y: cy - s * 0.05, size: s * 0.42, color });
+      page.drawCircle({ x: cx + s * 0.05, y: cy + s * 0.15, size: s * 0.5, color });
+      page.drawCircle({ x: cx + s * 0.5, y: cy - s * 0.05, size: s * 0.38, color });
+      page.drawRectangle({ x: cx - s * 0.75, y: cy - s * 0.35, width: s * 1.5, height: s * 0.35, color });
+    }
+    function iconEyes(cx, cy, s, color) {
+      for (const dx of [-0.4, 0.4]) {
+        page.drawCircle({ x: cx + s * dx, y: cy, size: s * 0.3, color });
+        page.drawCircle({ x: cx + s * dx - s * 0.08, y: cy + s * 0.08, size: s * 0.08, color: WHITE });
+      }
+    }
+    function iconRuler(cx, cy, s, color) {
+      page.drawRectangle({ x: cx - s * 0.6, y: cy - s * 0.22, width: s * 1.2, height: s * 0.44, borderColor: color, borderWidth: 1.3 });
+      for (let i = -2; i <= 2; i++) page.drawLine({ start: { x: cx + i * s * 0.2, y: cy + s * 0.22 }, end: { x: cx + i * s * 0.2, y: cy + s * 0.05 }, thickness: 1, color });
+    }
+    function iconGrid(cx, cy, s, color) {
+      for (let i = 0; i <= 2; i++) {
+        page.drawLine({ start: { x: cx - s * 0.5, y: cy - s * 0.5 + i * s * 0.5 }, end: { x: cx + s * 0.5, y: cy - s * 0.5 + i * s * 0.5 }, thickness: 1, color });
+        page.drawLine({ start: { x: cx - s * 0.5 + i * s * 0.5, y: cy - s * 0.5 }, end: { x: cx - s * 0.5 + i * s * 0.5, y: cy + s * 0.5 }, thickness: 1, color });
+      }
+    }
+    function iconList(cx, cy, s, color) {
+      for (let i = -1; i <= 1; i++) {
+        page.drawCircle({ x: cx - s * 0.45, y: cy + i * s * 0.35, size: s * 0.06, color });
+        page.drawLine({ start: { x: cx - s * 0.28, y: cy + i * s * 0.35 }, end: { x: cx + s * 0.5, y: cy + i * s * 0.35 }, thickness: 1.3, color });
+      }
+    }
 
     // ---------- Титул ----------
-    drawLine('CrochetLens', { size: 10, useFont: fontBold, color: ACCENT, gap: 6 });
-    drawLine(title || '-', { size: 20, useFont: fontBold, color: INK, gap: 4 });
-    drawWrapped(`${t.heightRow}: ${height} cm  ·  ${t.gaugeFormat(stg, rowg)}`, { size: 9, color: INK2, gap: 10 });
+    drawLine('CROCHETLENS', { size: 10, useFont: fontBold, color: ACCENT, gap: 8 });
+    drawLine(title || '-', { size: 22, useFont: fontBold, color: INK, gap: 14 });
 
     // ---------- Фото ----------
-    if (embeddedPhoto) {
-      const maxW = 200, maxH = 240;
-      const scale = Math.min(maxW / embeddedPhoto.width, maxH / embeddedPhoto.height, 1);
-      const w = embeddedPhoto.width * scale, h = embeddedPhoto.height * scale;
-      ensureSpace(h + 14);
-      page.drawImage(embeddedPhoto, { x: MARGIN + (CONTENT_W - w) / 2, y: y - h, width: w, height: h });
-      y -= h + 14;
+    const coverPhotos = embeddedImages.filter(Boolean).slice(0, 2);
+    if (coverPhotos.length === 1) {
+      const photo = coverPhotos[0];
+      const maxW = 190, maxH = 220;
+      const scale = Math.min(maxW / photo.width, maxH / photo.height, 1);
+      const w = photo.width * scale, h = photo.height * scale;
+      ensureSpace(h + 18);
+      const px = MARGIN + (CONTENT_W - w) / 2;
+      page.drawRectangle({ x: px - 6, y: y - h - 6, width: w + 12, height: h + 12, color: CARD_BG, borderColor: LINE, borderWidth: 1 });
+      page.drawImage(photo, { x: px, y: y - h, width: w, height: h });
+      y -= h + 22;
+    } else if (coverPhotos.length === 2) {
+      const maxW = 150, maxH = 190, gapPhotos = 16;
+      const sizes = coverPhotos.map(photo => {
+        const scale = Math.min(maxW / photo.width, maxH / photo.height, 1);
+        return { w: photo.width * scale, h: photo.height * scale };
+      });
+      const rowH = Math.max(sizes[0].h, sizes[1].h);
+      ensureSpace(rowH + 18);
+      const totalW = sizes[0].w + sizes[1].w + gapPhotos;
+      let px = MARGIN + (CONTENT_W - totalW) / 2;
+      const labels = [t.frontPhotoLabel, t.backPhotoLabel];
+      coverPhotos.forEach((photo, i) => {
+        const { w, h } = sizes[i];
+        page.drawRectangle({ x: px - 6, y: y - rowH - 6, width: w + 12, height: rowH + 12, color: CARD_BG, borderColor: LINE, borderWidth: 1 });
+        page.drawImage(photo, { x: px, y: y - rowH + (rowH - h), width: w, height: h });
+        const labelW = font.widthOfTextAtSize(labels[i], 7.5);
+        page.drawText(labels[i], { x: px + (w - labelW) / 2, y: y - rowH - 20, size: 7.5, font, color: INK2 });
+        px += w + gapPhotos;
+      });
+      y -= rowH + 34;
+    }
+
+    // ---------- Инфо-карточки: размер / плотность / деталей ----------
+    {
+      const cardH = 54, gap = 12;
+      const cardW = (CONTENT_W - gap * 2) / 3;
+      ensureSpace(cardH + 16);
+      const infoCards = [
+        { icon: iconRuler, label: t.heightRow, value: `${height} cm` },
+        { icon: iconGrid, label: t.gaugeRow, value: `${stg}/${rowg}` },
+        { icon: iconList, label: t.partsHeader, value: String(parts.length) }
+      ];
+      infoCards.forEach((c, i) => {
+        const cx0 = MARGIN + i * (cardW + gap);
+        page.drawRectangle({ x: cx0, y: y - cardH, width: cardW, height: cardH, color: CARD_BG, borderColor: LINE, borderWidth: 1 });
+        c.icon(cx0 + 22, y - cardH / 2, 15, ACCENT);
+        const lx = cx0 + 40;
+        page.drawText(c.label, { x: lx, y: y - 20, size: 7.5, font, color: INK2 });
+        page.drawText(c.value, { x: lx, y: y - 34, size: 12.5, font: fontBold, color: INK });
+      });
+      y -= cardH + 20;
     }
 
     // ---------- Дисклеймер ----------
-    const discLines = wrapText('⚠ ' + t.disclaimer, font, 9, CONTENT_W - 20);
+    const discLines = wrapText(t.disclaimer, font, 9, CONTENT_W - 30);
     const discHeight = discLines.length * 13 + 16;
-    ensureSpace(discHeight + 10);
+    ensureSpace(discHeight + 16);
     page.drawRectangle({ x: MARGIN, y: y - discHeight, width: CONTENT_W, height: discHeight, color: DISCLAIMER_BG });
+    page.drawRectangle({ x: MARGIN, y: y - discHeight, width: 4, height: discHeight, color: ACCENT_DEEP });
     let dy = y - 14;
     for (const line of discLines) {
-      page.drawText(line, { x: MARGIN + 10, y: dy - 9, size: 9, font, color: DISCLAIMER_TEXT });
+      page.drawText(line, { x: MARGIN + 16, y: dy - 9, size: 9, font, color: DISCLAIMER_TEXT });
       dy -= 13;
     }
-    y -= discHeight + 16;
+    y -= discHeight + 22;
 
     // ---------- Материалы ----------
-    drawLine(t.materialsHeader, { size: 13, useFont: fontBold, gap: 8 });
-    const matRows = [
-      [t.heightRow, `${height} cm`],
-      [t.gaugeRow, t.gaugeFormat(stg, rowg)],
-      [t.yarnRow, t.yarnVal],
-      [t.hookRow, t.hookVal],
-      [t.stuffRow, t.stuffVal],
-      [t.extraRow, t.extraVal],
-    ];
-    for (const [label, value] of matRows) {
-      ensureSpace(20);
-      page.drawText(label, { x: MARGIN, y: y - 9.5, size: 9.5, font: fontBold, color: INK });
-      page.drawText(String(value), { x: MARGIN + 170, y: y - 9.5, size: 9.5, font, color: INK });
-      y -= 14;
-      page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.5, color: LINE });
-      y -= 6;
+    drawLine(t.materialsHeader, { size: 14, useFont: fontBold, gap: 12 });
+    {
+      const matItems = [
+        { icon: iconYarn, label: t.yarnRow, value: t.yarnVal },
+        { icon: iconHook, label: t.hookRow, value: t.hookVal },
+        { icon: iconCloud, label: t.stuffRow, value: t.stuffVal },
+        { icon: iconEyes, label: t.extraRow, value: t.extraVal }
+      ];
+      const colW = (CONTENT_W - 14) / 2;
+      let colX = [MARGIN, MARGIN + colW + 14];
+      let colY = [y, y];
+      matItems.forEach((m, i) => {
+        const col = i % 2;
+        const rowH = 46;
+        if (colY[col] - rowH < MARGIN) { newPage(); colY[0] = y; colY[1] = y; }
+        const bx = colX[col], by = colY[col];
+        page.drawRectangle({ x: bx, y: by - rowH, width: colW, height: rowH, color: CARD_BG, borderColor: LINE, borderWidth: 1 });
+        m.icon(bx + 22, by - rowH / 2, 15, ACCENT);
+        const lines = wrapText(m.value, font, 8, colW - 52);
+        page.drawText(m.label, { x: bx + 40, y: by - 16, size: 9, font: fontBold, color: INK });
+        let ty = by - 28;
+        for (const l of lines.slice(0, 2)) { page.drawText(l, { x: bx + 40, y: ty, size: 8, font, color: INK2 }); ty -= 10; }
+        colY[col] -= rowH + 8;
+      });
+      y = Math.min(colY[0], colY[1]) + 8;
     }
-    spacer(10);
+    spacer(14);
 
     // ---------- Легенда ----------
-    drawLine(t.legendHeader, { size: 13, useFont: fontBold, gap: 8 });
+    drawLine(t.legendHeader, { size: 14, useFont: fontBold, gap: 10 });
+    ensureSpace(t.legend.length * 15 + 10);
+    page.drawRectangle({ x: MARGIN, y: y - t.legend.length * 15 - 8, width: CONTENT_W, height: t.legend.length * 15 + 8, color: CARD_BG, borderColor: LINE, borderWidth: 1 });
+    y -= 6;
     for (const [abbr, mean] of t.legend) {
-      ensureSpace(15);
-      page.drawText(abbr, { x: MARGIN, y: y - 9, size: 9, font: fontBold, color: INK });
-      page.drawText(mean, { x: MARGIN + 110, y: y - 9, size: 9, font, color: INK });
+      page.drawText(abbr, { x: MARGIN + 12, y: y - 9, size: 9, font: fontBold, color: ACCENT_DEEP });
+      page.drawText(mean, { x: MARGIN + 120, y: y - 9, size: 9, font, color: INK });
       y -= 15;
     }
+    y -= 4;
 
     // ---------- Детали ----------
     newPage();
-    drawLine(t.partsHeader, { size: 20, useFont: fontBold, gap: 12 });
+    drawLine(t.partsHeader, { size: 20, useFont: fontBold, gap: 16 });
 
+    let partIndex = 0;
     for (const p of parts) {
+      partIndex++;
       const { rounds, maxSt } = computePart(p, stg, rowg, lang);
-      const header = `${p.name}  ·  ${t.typeLabels[p.type] || p.type}  ·  ${p.count} ${t.pc}  ·  ${t.maxSt}: ${maxSt}`;
-      ensureSpace(30);
-      drawLine(header, { size: 11.5, useFont: fontBold, color: ACCENT, gap: 6 });
+      const hasThumb = !!(p.bbox && embeddedImages[p.bbox.image]);
+      const headerH = hasThumb ? 46 : 30;
+      ensureSpace(headerH + 14);
+
+      // Цветная шапка с номером
+      page.drawRectangle({ x: MARGIN, y: y - headerH, width: CONTENT_W, height: headerH, color: GOLD_BG });
+      page.drawCircle({ x: MARGIN + 18, y: y - headerH / 2, size: 12, color: GOLD });
+      centeredText(String(partIndex), y - headerH / 2, { size: 11, color: WHITE, cx: MARGIN + 18 });
+      page.drawText(p.name, { x: MARGIN + 38, y: y - (hasThumb ? 18 : 13), size: 11.5, font: fontBold, color: INK });
+      const metaStr = `${t.typeLabels[p.type] || p.type}  ·  ${p.count} ${t.pc}  ·  ${t.maxSt}: ${maxSt}`;
+      page.drawText(metaStr, { x: MARGIN + 38, y: y - (hasThumb ? 32 : 25), size: 8, font, color: INK2 });
+      if (hasThumb) {
+        const thumbSize = 36;
+        const tx = MARGIN + CONTENT_W - thumbSize - 5;
+        const ty = y - 5;
+        page.drawRectangle({ x: tx - 1.5, y: ty - thumbSize - 1.5, width: thumbSize + 3, height: thumbSize + 3, color: WHITE, borderColor: LINE, borderWidth: 1 });
+        drawCroppedThumb(page, embeddedImages[p.bbox.image], p.bbox, tx, ty, thumbSize, thumbSize);
+      }
+      y -= headerH + 10;
+
       for (const r of rounds) {
-        const lines = wrapText(r.text, font, 9, CONTENT_W - 30);
-        ensureSpace(lines.length * 13 + 4);
-        page.drawText(String(r.n), { x: MARGIN, y: y - 9, size: 9, font, color: INK2 });
+        const lines = wrapText(r.text, font, 9, CONTENT_W - 36);
+        const rowH = Math.max(lines.length * 13, 15) + 3;
+        ensureSpace(rowH);
+        page.drawCircle({ x: MARGIN + 8, y: y - 8, size: 7.5, color: CARD_BG, borderColor: LINE, borderWidth: 0.8 });
+        const numSize = String(r.n).length > 1 ? 6.5 : 7.5;
+        centeredText(String(r.n), y - 8, { size: numSize, color: ACCENT_DEEP, cx: MARGIN + 8 });
         let ly = y;
         for (const line of lines) {
-          page.drawText(line, { x: MARGIN + 25, y: ly - 9, size: 9, font, color: INK });
+          page.drawText(line, { x: MARGIN + 26, y: ly - 9, size: 9, font, color: INK });
           ly -= 13;
         }
-        y = ly - 2;
+        y = ly - 3;
       }
-      spacer(10);
+      spacer(12);
     }
 
     // ---------- Декор ----------
     newPage();
-    drawLine(t.decorHeader, { size: 13, useFont: fontBold, gap: 6 });
-    drawWrapped(t.decorNote, { size: 8.5, color: INK2, gap: 10 });
+    drawLine(t.decorHeader, { size: 14, useFont: fontBold, gap: 6 });
+    drawWrapped(t.decorNote, { size: 8.5, color: INK2, gap: 12 });
     for (const d of decorations) {
-      ensureSpace(20);
-      drawLine(d.name, { size: 10.5, useFont: fontBold, color: ACCENT, gap: 3 });
-      drawWrapped(d.instruction, { size: 9, gap: 8 });
+      ensureSpace(24);
+      page.drawCircle({ x: MARGIN + 4, y: y - 6, size: 3, color: ACCENT, rotate: { angle: 45, type: 'degrees' } });
+      drawLine(d.name, { size: 10.5, useFont: fontBold, color: ACCENT_DEEP, x: MARGIN + 14, gap: 4 });
+      drawWrapped(d.instruction, { size: 9, x: MARGIN + 14, maxWidth: CONTENT_W - 14, gap: 10 });
     }
 
     // ---------- Персонализация ----------
     if (personalizeText && personalizeText.trim()) {
       newPage();
-      drawLine(t.personalizeHeader, { size: 13, useFont: fontBold, gap: 8 });
+      drawLine(t.personalizeHeader, { size: 14, useFont: fontBold, gap: 10 });
       drawWrapped(t.personalizeInstruction, { size: 9, color: INK2, gap: 20 });
       const text = personalizeText.trim().slice(0, 20);
       let stencilSize = 90;
       while (stencilSize > 24 && fontScript.widthOfTextAtSize(text, stencilSize) > CONTENT_W - 20) stencilSize -= 2;
       ensureSpace(stencilSize + 40);
       const textWidth = fontScript.widthOfTextAtSize(text, stencilSize);
-      page.drawRectangle({ x: MARGIN, y: y - stencilSize - 30, width: CONTENT_W, height: stencilSize + 30, borderColor: LINE, borderWidth: 1, borderDashArray: [4, 4] });
-      page.drawText(text, { x: MARGIN + (CONTENT_W - textWidth) / 2, y: y - stencilSize + 8, size: stencilSize, font: fontScript, color: INK });
+      page.drawRectangle({ x: MARGIN, y: y - stencilSize - 30, width: CONTENT_W, height: stencilSize + 30, color: CARD_BG, borderColor: LINE, borderWidth: 1, borderDashArray: [4, 4] });
+      page.drawText(text, { x: MARGIN + (CONTENT_W - textWidth) / 2, y: y - stencilSize + 8, size: stencilSize, font: fontScript, color: ACCENT_DEEP });
       y -= stencilSize + 46;
     }
+
+    // ---------- Футер на последней странице ----------
+    ensureSpace(30);
+    page.drawLine({ start: { x: MARGIN, y: MARGIN + 20 }, end: { x: PAGE_W - MARGIN, y: MARGIN + 20 }, thickness: 0.6, color: LINE });
+    page.drawText(t.footer, { x: MARGIN, y: MARGIN + 8, size: 7.5, font, color: INK2 });
+    page.drawText('CrochetLens', { x: PAGE_W - MARGIN - fontBold.widthOfTextAtSize('CrochetLens', 7.5), y: MARGIN + 8, size: 7.5, font: fontBold, color: ACCENT });
 
     const pdfBytes = await pdfDoc.save();
     res.setHeader('Content-Type', 'application/pdf');
