@@ -171,6 +171,7 @@ const T = {
     notSuitable:(reason)=>'This photo isn\u2019t quite right for a pattern'+(reason?': '+reason:'')+'. This check is free — no credit was used. Please try another photo.',
     doneText:(n,d)=>'Done — found '+n+' part type(s)'+(d?' and '+d+' decorative element(s).':'.'),
     errorText:(msg)=>'Could not analyze the photo: '+msg+'. Try another image.',
+    malformedResponseError:'The response was incomplete — please try again',
     emptyKeyText:'ANTHROPIC_API_KEY is not set in Vercel (Settings → Environment Variables)',
     typeLabels:{sphere:'sphere', cylinder:'cylinder', disc:'disc', cone:'cone', oval:'oval', panel:'panel'},
     fieldLabels:{
@@ -218,6 +219,7 @@ const T = {
     notSuitable:(reason)=>'Это фото не очень подходит для схемы'+(reason?': '+reason:'')+'. Проверка бесплатная — генерация не была списана. Попробуйте другое фото.',
     doneText:(n,d)=>'Готово — найдено '+n+' вид(ов) деталей'+(d?' и '+d+' декоративный элемент.':'.'),
     errorText:(msg)=>'Не удалось разобрать фото: '+msg+'. Попробуйте другое изображение.',
+    malformedResponseError:'Ответ пришёл не полностью — попробуйте ещё раз',
     emptyKeyText:'ANTHROPIC_API_KEY не настроен в Vercel (Settings → Environment Variables)',
     typeLabels:{sphere:'шар', cylinder:'цилиндр', disc:'диск', cone:'конус', oval:'овал', panel:'полотно'},
     fieldLabels:{
@@ -265,6 +267,7 @@ const T = {
     notSuitable:(reason)=>'Це фото не зовсім підходить для схеми'+(reason?': '+reason:'')+'. Перевірка безкоштовна — генерацію не списано. Спробуйте інше фото.',
     doneText:(n,d)=>'Готово — знайдено '+n+' вид(ів) деталей'+(d?' і '+d+' декоративний елемент.':'.'),
     errorText:(msg)=>'Не вдалося розібрати фото: '+msg+'. Спробуйте інше зображення.',
+    malformedResponseError:'Відповідь прийшла не повністю — спробуйте ще раз',
     emptyKeyText:'ANTHROPIC_API_KEY не налаштований у Vercel (Settings → Environment Variables)',
     typeLabels:{sphere:'куля', cylinder:'циліндр', disc:'диск', cone:'конус', oval:'овал', panel:'полотно'},
     fieldLabels:{
@@ -664,7 +667,7 @@ analyzeBtn.addEventListener('click', async function(){
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1200,
+        max_tokens: 4000,
         system: system,
         messages: [{
           role: 'user',
@@ -678,7 +681,12 @@ analyzeBtn.addEventListener('click', async function(){
     const textBlock = (data.content || []).find(function(c){ return c.type === 'text'; });
     if(!textBlock) throw new Error(data.error && data.error.message ? data.error.message : (data.error || 'Empty response'));
     const clean = textBlock.text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    let parsed;
+    try{
+      parsed = JSON.parse(clean);
+    }catch(parseErr){
+      throw new Error(t.malformedResponseError || 'The AI response was incomplete — please try again');
+    }
     const totalHeight = parseFloat(document.getElementById('height').value)||15;
     function clamp01(v){ v = parseFloat(v); return isFinite(v) ? Math.max(0, Math.min(1, v)) : 0; }
 
