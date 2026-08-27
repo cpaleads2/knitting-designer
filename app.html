@@ -287,6 +287,32 @@ let currentLang = 'en';
 let resultUnlocked = false;
 let lastPartsCount = null, lastDecorCount = null;
 let images = []; // {base64, mediaType, dataUrl}
+
+// AI responses occasionally contain a raw newline/tab inside a JSON string value
+// (e.g. in a decoration instruction), which breaks JSON.parse with "Unterminated string".
+// This walks the text tracking whether we're inside a quoted string (respecting \" escapes)
+// and only escapes control characters found there — everything outside strings is untouched.
+function sanitizeJsonText(text){
+  let result = '';
+  let inString = false;
+  let escaped = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+    if(inString){
+      if(escaped){ result += ch; escaped = false; continue; }
+      if(ch === '\\'){ result += ch; escaped = true; continue; }
+      if(ch === '"'){ inString = false; result += ch; continue; }
+      if(ch === '\n'){ result += '\\n'; continue; }
+      if(ch === '\r'){ result += '\\r'; continue; }
+      if(ch === '\t'){ result += '\\t'; continue; }
+      result += ch;
+    } else {
+      if(ch === '"'){ inString = true; result += ch; continue; }
+      result += ch;
+    }
+  }
+  return result;
+}
 const MAX_IMAGES = 3;
 let parts = [];
 let decorations = [];
@@ -618,7 +644,7 @@ analyzeBtn.addEventListener('click', async function(){
     const checkData = await checkResponse.json();
     const checkBlock = (checkData.content || []).find(function(c){ return c.type === 'text'; });
     if(checkBlock){
-      const cleanCheck = checkBlock.text.replace(/```json|```/g,'').trim();
+      const cleanCheck = sanitizeJsonText(checkBlock.text.replace(/```json|```/g,'').trim());
       const checkParsed = JSON.parse(cleanCheck);
       if(checkParsed.suitable === false){
         parts = [];
@@ -653,6 +679,7 @@ analyzeBtn.addEventListener('click', async function(){
     'Separately list decorative elements that do not map to a primitive and are not a large piece (bows, sewn-on notions like eyes, embroidery) in the decorations field with a brief construction note. ' +
     'Write all "name" and "instruction" values in ' + t.promptLang + '. ' +
     'Use ONLY that language for every value — do not mix in English words, do not add English glosses or transliterations in parentheses, and do not switch languages mid-word or mid-phrase. ' +
+    'Every JSON string value must be a single line — never put a literal line break inside a string; use a space instead. ' +
     'Respond ONLY with valid JSON, no markdown, no preamble, exactly matching this schema: ' +
     '{"parts":[{"name":"string","type":"sphere|cylinder|disc|cone|oval|panel","count":integer,' +
     '"diam_ratio":number 0.02-1 (for sphere/cylinder/disc/cone — diameter as a fraction of toy height),' +
@@ -680,7 +707,7 @@ analyzeBtn.addEventListener('click', async function(){
     const data = await response.json();
     const textBlock = (data.content || []).find(function(c){ return c.type === 'text'; });
     if(!textBlock) throw new Error(data.error && data.error.message ? data.error.message : (data.error || 'Empty response'));
-    const clean = textBlock.text.replace(/```json|```/g,'').trim();
+    const clean = sanitizeJsonText(textBlock.text.replace(/```json|```/g,'').trim());
     let parsed;
     try{
       parsed = JSON.parse(clean);
