@@ -577,6 +577,30 @@ function updateFilenameDisplay(){
   document.getElementById('filename-display').textContent = images.length ? t.filesChosenText(images.length) : t.noFileChosen;
 }
 
+// Загруженный файл может быть в любом формате, который понимает браузер (webp, gif, bmp и т.д.),
+// но PDF-библиотека на бэкенде умеет встраивать только PNG и JPEG. Поэтому здесь любое фото
+// перерисовывается через canvas и всегда экспортируется как JPEG — независимо от исходного формата.
+function reencodeToJpeg(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF'; // фон на случай прозрачности (PNG/webp с альфа-каналом)
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(objectUrl);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg', dataUrl });
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('image decode failed')); };
+    img.src = objectUrl;
+  });
+}
+
 fileInput.addEventListener('change', () => {
   const files = Array.from(fileInput.files || []).slice(0, MAX_IMAGES);
   if(!files.length) return;
@@ -584,9 +608,8 @@ fileInput.addEventListener('change', () => {
   const startIdx = images.length;
   const batch = new Array(files.length);
   files.forEach((f, idx) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      batch[idx] = { base64: reader.result.split(',')[1], mediaType: f.type, dataUrl: reader.result };
+    reencodeToJpeg(f).then((result) => {
+      batch[idx] = result;
       loaded++;
       if(loaded === files.length){
         images = images.concat(batch).slice(0, MAX_IMAGES);
@@ -594,8 +617,15 @@ fileInput.addEventListener('change', () => {
         updateFilenameDisplay();
         analyzeBtn.disabled = images.length === 0;
       }
-    };
-    reader.readAsDataURL(f);
+    }).catch(() => {
+      loaded++;
+      if(loaded === files.length){
+        images = images.concat(batch.filter(Boolean)).slice(0, MAX_IMAGES);
+        renderPreviews();
+        updateFilenameDisplay();
+        analyzeBtn.disabled = images.length === 0;
+      }
+    });
   });
   fileInput.value = '';
 });
