@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrochetLens — Фото в схему мозаичного вязания</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF3EA; --card:#FFFFFF; --card-soft:#FDF8F1; --ink:#3A2618; --ink-2:#8C7561;
+    --line:#EAD9C0; --line-soft:#F1E4D2;
+    --accent:#B9702F; --accent-deep:#8F4E1E; --accent-bg:#F3E0C8;
+    --gold:#9C7A34; --gold-bg:#F1E7CE;
+    --teal:#3E6E5C; --teal-bg:#E3EFE7;
+    --font-display:'Fraunces', serif; --font-body:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); padding:0 0 3rem;}
+  .wrap{max-width:720px; margin:0 auto; padding:0 1.25rem;}
+  a{color:inherit;}
+  header{border-bottom:1px solid var(--line); padding:14px 0; margin-bottom:2rem; background:rgba(251,243,234,0.9);}
+  .headerbar{display:flex; align-items:center; justify-content:space-between; max-width:720px; margin:0 auto; padding:0 1.25rem;}
+  .logo{font-family:var(--font-display); font-weight:700; font-size:18px; text-decoration:none;}
+  .backlink{font-size:13px; color:var(--ink-2); text-decoration:none; font-weight:500;}
+  .backlink:hover{color:var(--accent);}
+  h1{font-family:var(--font-display); font-size:28px; font-weight:700; margin:0 0 6px; letter-spacing:-0.01em;}
+  h2{font-family:var(--font-display); font-size:17px; font-weight:700; margin:1.5rem 0 0.75rem;}
+  .sub{color:var(--ink-2); font-size:14.5px; margin:0 0 1.75rem; line-height:1.5;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:1.35rem; margin-bottom:1.25rem; box-shadow:0 10px 26px -18px rgba(58,38,24,0.18);}
+  label{font-size:12.5px; color:var(--ink-2); display:block; margin-bottom:5px; font-weight:500;}
+  input[type=number], input[type=text], input[type=file], select{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:9px; font-size:13.5px; background:#fff; font-family:inherit; color:var(--ink);}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;}
+  button{cursor:pointer; border:none; border-radius:999px; padding:12px 18px; font-size:14px; font-weight:600; font-family:inherit;}
+  .btn-primary{background:var(--accent); color:#fff; width:100%; box-shadow:0 4px 14px rgba(185,112,47,0.28);}
+  .btn-primary:hover{background:var(--accent-deep);}
+  .btn-primary:disabled{background:#DFCFB8; box-shadow:none; cursor:not-allowed;}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink); font-size:13px; padding:9px 14px; border-radius:999px;}
+  .status{font-size:13px; color:var(--ink-2); margin-top:10px; min-height:18px;}
+  .note{font-size:12px; color:var(--ink-2); line-height:1.5; margin-top:6px;}
+  .warn-banner{background:#fff7e0; border:1px solid #f0cf7a; border-left:4px solid #d97706; border-radius:12px; padding:12px 14px; margin:0 0 22px; font-size:13px; line-height:1.5; color:#7a4a00; display:flex; gap:10px; align-items:flex-start;}
+  .warn-banner .icon{flex-shrink:0; font-size:16px; line-height:1.4;}
+  #photo-preview{max-width:180px; max-height:180px; border-radius:10px; border:1px solid var(--line); display:none; margin-top:10px;}
+  #chart-wrap{overflow:auto; border:1px solid var(--line); border-radius:14px; background:#fff; margin-top:14px; display:none; max-height:520px;}
+  #chart-canvas{display:block;}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0;}
+  .stat{background:var(--card-soft); border:1px solid var(--line-soft); border-radius:12px; padding:12px;}
+  .stat .n{font-family:var(--font-display); font-size:21px; font-weight:700;}
+  .stat .l{font-size:11.5px; color:var(--ink-2);}
+  .legend-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px; margin-top:10px;}
+  .legend-item{display:flex; align-items:center; gap:8px; font-size:12px; border:1px solid var(--line); border-radius:10px; padding:7px 9px; background:var(--card-soft);}
+  .legend-swatch{width:20px; height:20px; border-radius:5px; border:1px solid rgba(0,0,0,0.15); flex-shrink:0;}
+  #pdf-section{display:none; margin-top:1rem;}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--accent-deep); background:var(--accent-bg); border-radius:999px; padding:5px 14px; margin-bottom:1rem;}
+</style>
+</head>
+<body>
+<div style="background:#3A2618; color:#F3E0C8; text-align:center; padding:8px; font-size:13px; font-weight:600; font-family:system-ui,sans-serif;">
+  🔒 ВНУТРЕННЯЯ ВЕРСИЯ — только для тестирования, без оплаты. Не публиковать и не рассылать эту ссылку.
+</div>
+<header>
+  <div class="headerbar">
+    <a href="index.html" class="logo">🧶 CrochetLens</a>
+    <a href="index.html" class="backlink">← На главную</a>
+  </div>
+</header>
+<div class="wrap">
+  <span class="eyebrow">🧵 Мозаичное вязание</span>
+  <h1>Фото → схема мозаичного вязания</h1>
+  <p class="sub">Подушка, плед, шарф или любое плоское полотно — превращаем фото человека, питомца или предмета в цветную схему для вязания одним столбиком без накида.</p>
+
+  <div class="warn-banner"><span class="icon">⚠️</span><span>Чем контрастнее и чётче фото, тем лучше получится схема. Мелкие детали (например, глаза) могут потеряться на маленькой сетке — попробуйте разные размеры/количество цветов, если результат не устраивает.</span></div>
+
+  <div class="card">
+    <label for="file">Фото (1 шт.)</label>
+    <input type="file" id="file" accept="image/*" />
+    <img id="photo-preview" />
+  </div>
+
+  <div class="card">
+    <label for="itemType">Тип изделия</label>
+    <select id="itemType">
+      <option value="pillow">Подушка (~40×40 см)</option>
+      <option value="blanket">Плед (~100×130 см)</option>
+      <option value="scarf">Шарф (~20×150 см)</option>
+      <option value="custom" selected>Свои размеры</option>
+    </select>
+
+    <div style="height:12px;"></div>
+    <div class="row3">
+      <div>
+        <label for="widthCm">Ширина, см</label>
+        <input type="number" id="widthCm" value="30" min="5" max="200" />
+      </div>
+      <div>
+        <label for="heightCm">Высота, см</label>
+        <input type="number" id="heightCm" value="30" min="5" max="200" />
+      </div>
+      <div>
+        <label for="colorCount">Кол-во цветов</label>
+        <select id="colorCount">
+          <option>4</option><option>6</option><option selected>8</option><option>10</option><option>12</option><option>16</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="height:12px;"></div>
+    <div class="row">
+      <div>
+        <label for="stg">Петель на 10 см</label>
+        <input type="number" id="stg" value="18" min="8" max="40" />
+      </div>
+      <div>
+        <label for="rowg">Рядов на 10 см</label>
+        <input type="number" id="rowg" value="20" min="8" max="40" />
+      </div>
+    </div>
+    <p class="note">Плотность зависит от пряжи и крючка — свяжите образец 10×10 см, чтобы указать точные цифры.</p>
+  </div>
+
+  <div class="card">
+    <label for="personalizeText">Имя или короткий текст на изделии (необязательно)</label>
+    <input type="text" id="personalizeText" maxlength="16" placeholder="" />
+    <p class="note">Текст впишется отдельной полосой прямо в схему (как на пледах с именем) — не отдельной вышивкой, а частью самого вязания.</p>
+  </div>
+
+  <button class="btn-primary" id="build-btn" disabled>Собрать схему</button>
+  <div class="status" id="status"></div>
+
+  <div id="chart-wrap"><canvas id="chart-canvas"></canvas></div>
+
+  <div class="stats" id="stats" style="display:none;">
+    <div class="stat"><div class="n" id="stat-grid">—</div><div class="l">петель × рядов</div></div>
+    <div class="stat"><div class="n" id="stat-colors">—</div><div class="l">цветов пряжи</div></div>
+    <div class="stat"><div class="n" id="stat-stitches">—</div><div class="l">столбиков всего</div></div>
+  </div>
+
+  <div id="legend-section" style="display:none;">
+    <h2>Цвета пряжи</h2>
+    <div class="legend-grid" id="legend-grid"></div>
+  </div>
+
+  <div id="pdf-section">
+    <button class="btn-primary" id="generate-pdf-btn">Скачать PDF (после оплаты)</button>
+    <div class="status" id="pdf-status"></div>
+  </div>
+</div>
+
+<script>
+const MAX_GRID_W = 130, MAX_GRID_H = 170; // разумный предел, чтобы PDF и рендер не были неподъёмными
+const CHART_CELL_PX = 36; // размер клетки в экспортируемом PNG для PDF (даёт хорошее качество при печати)
+
+let photo = null; // {base64, mediaType, img}
+let gridData = null; // {w, h, indices:[...], palette:[[r,g,b],...]}
+
+const itemPresets = {
+  pillow: {w:40, h:40},
+  blanket: {w:100, h:130},
+  scarf: {w:20, h:150},
+  custom: null
+};
+
+document.getElementById('itemType').addEventListener('change', function(){
+  const preset = itemPresets[this.value];
+  if(preset){
+    document.getElementById('widthCm').value = preset.w;
+    document.getElementById('heightCm').value = preset.h;
+  }
+});
+
+function reencodeToJpeg(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      resolve({ base64: dataUrl.split(',')[1], mediaType:'image/jpeg', dataUrl, img });
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('decode failed')); };
+    img.src = objectUrl;
+  });
+}
+
+document.getElementById('file').addEventListener('change', function(){
+  const f = this.files[0];
+  if(!f) return;
+  reencodeToJpeg(f).then(result => {
+    photo = result;
+    const preview = document.getElementById('photo-preview');
+    preview.src = result.dataUrl;
+    preview.style.display = 'block';
+    document.getElementById('build-btn').disabled = false;
+  }).catch(() => {
+    document.getElementById('status').textContent = 'Не удалось прочитать фото — попробуйте другой файл.';
+  });
+});
+
+// Простой k-means по цвету для квантования палитры
+function kMeansQuantize(pixels, k, iterations){
+  const n = pixels.length;
+  k = Math.min(k, n);
+  let centers = [];
+  for(let i=0;i<k;i++){
+    centers.push(pixels[Math.floor(i * n / k)].slice());
+  }
+  let assignments = new Array(n).fill(0);
+  for(let it=0; it<iterations; it++){
+    for(let i=0;i<n;i++){
+      let best=0, bestDist=Infinity;
+      const p = pixels[i];
+      for(let c=0;c<k;c++){
+        const cc = centers[c];
+        const dr=p[0]-cc[0], dg=p[1]-cc[1], db=p[2]-cc[2];
+        const d = dr*dr+dg*dg+db*db;
+        if(d<bestDist){ bestDist=d; best=c; }
+      }
+      assignments[i]=best;
+    }
+    const sums = Array.from({length:k}, () => [0,0,0,0]);
+    for(let i=0;i<n;i++){
+      const a=assignments[i], p=pixels[i];
+      sums[a][0]+=p[0]; sums[a][1]+=p[1]; sums[a][2]+=p[2]; sums[a][3]++;
+    }
+    for(let c=0;c<k;c++){
+      if(sums[c][3]>0) centers[c] = [sums[c][0]/sums[c][3], sums[c][1]/sums[c][3], sums[c][2]/sums[c][3]];
+    }
+  }
+  return { centers, assignments };
+}
+
+function rgbToHex(r,g,b){
+  return '#' + [r,g,b].map(v => Math.round(v).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+
+// Небольшая курируемая палитра типичных названий цвета пряжи — для честного приближения,
+// не точного подбора конкретного бренда. Подбираем ближайший по RGB-расстоянию.
+const YARN_COLOR_NAMES = [
+  ['Белый', 255,255,255], ['Слоновая кость', 245,240,225], ['Кремовый', 240,230,200],
+  ['Бежевый', 222,196,160], ['Светло-серый', 200,200,200], ['Серый', 140,140,140],
+  ['Тёмно-серый', 80,80,80], ['Чёрный', 20,20,20],
+  ['Светло-жёлтый', 250,230,140], ['Жёлтый', 240,200,40], ['Горчичный', 200,160,40],
+  ['Персиковый', 245,190,150], ['Оранжевый', 230,130,40], ['Терракотовый', 190,90,55],
+  ['Коралловый', 230,110,95], ['Розовый', 235,170,190], ['Малиновый', 190,50,90],
+  ['Красный', 200,40,40], ['Бордовый', 110,30,40],
+  ['Светло-коричневый', 190,150,110], ['Коричневый', 130,90,55], ['Тёмно-коричневый', 80,55,35],
+  ['Каштановый', 100,50,35], ['Шоколадный', 60,35,25],
+  ['Мятный', 160,220,190], ['Салатовый', 170,210,90], ['Зелёный', 70,150,70],
+  ['Тёмно-зелёный', 40,90,50], ['Хвойный', 30,70,55], ['Оливковый', 120,120,60],
+  ['Голубой', 150,200,230], ['Небесно-синий', 100,170,220], ['Синий', 50,90,180],
+  ['Тёмно-синий', 30,50,110], ['Бирюзовый', 60,170,170], ['Джинсовый', 80,110,150],
+  ['Сиреневый', 190,170,220], ['Фиолетовый', 130,80,170], ['Лавандовый', 200,190,230]
+];
+function nearestYarnColorName(hex){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substr(0,2),16), g = parseInt(h.substr(2,2),16), b = parseInt(h.substr(4,2),16);
+  let best = YARN_COLOR_NAMES[0], bestDist = Infinity;
+  for(const c of YARN_COLOR_NAMES){
+    const dr=r-c[1], dg=g-c[2], db=b-c[3];
+    const d = dr*dr+dg*dg+db*db;
+    if(d<bestDist){ bestDist=d; best=c; }
+  }
+  return best[0];
+}
+
+// Вписывает текст прямо в сетку отдельной полосой снизу — двумя новыми цветами (фон полосы + текст),
+// перезаписывая соответствующие клетки. Рендерит текст с запасом разрешения, затем уменьшает
+// до размера сетки, чтобы буквы получились максимально чёткими на грубой сетке столбиков.
+function stampTextBand(gridData, text){
+  const { w, h } = gridData;
+  const bandRows = Math.max(7, Math.round(h * 0.15));
+  const bandStartRow = h - bandRows;
+  const renderScale = 10;
+
+  const big = document.createElement('canvas');
+  big.width = w * renderScale;
+  big.height = bandRows * renderScale;
+  const bctx = big.getContext('2d');
+  const bandBg = '#F2ECE2', inkColor = '#2B2622';
+  bctx.fillStyle = bandBg;
+  bctx.fillRect(0, 0, big.width, big.height);
+  bctx.textAlign = 'center';
+  bctx.textBaseline = 'middle';
+  bctx.fillStyle = inkColor;
+  let fontSize = big.height * 0.74;
+  bctx.font = `900 ${fontSize}px Arial, sans-serif`;
+  const maxWidth = big.width * 0.92;
+  let tw = bctx.measureText(text).width;
+  while(tw > maxWidth && fontSize > 6){
+    fontSize -= 2;
+    bctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    tw = bctx.measureText(text).width;
+  }
+  bctx.fillText(text, big.width/2, big.height/2 + fontSize*0.02);
+
+  const small = document.createElement('canvas');
+  small.width = w; small.height = bandRows;
+  const sctx = small.getContext('2d');
+  sctx.imageSmoothingEnabled = true;
+  sctx.imageSmoothingQuality = 'high';
+  sctx.drawImage(big, 0, 0, w, bandRows);
+  const data = sctx.getImageData(0,0,w,bandRows).data;
+
+  const inkIdx = gridData.palette.length;
+  const bgIdx = gridData.palette.length + 1;
+  const inkRgb = [0x2B,0x26,0x22], bgRgb = [0xF2,0xEC,0xE2];
+  gridData.palette.push(inkRgb);
+  gridData.palette.push(bgRgb);
+  gridData.personalizeBandRows = bandRows;
+
+  for(let y=0; y<bandRows; y++){
+    for(let x=0; x<w; x++){
+      const i = (y*w + x) * 4;
+      const lum = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+      gridData.indices[(bandStartRow+y)*w + x] = lum < 140 ? inkIdx : bgIdx;
+    }
+  }
+}
+
+document.getElementById('build-btn').addEventListener('click', function(){
+  if(!photo){ return; }
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = 'Собираю схему...';
+
+  const widthCm = parseFloat(document.getElementById('widthCm').value) || 30;
+  const heightCm = parseFloat(document.getElementById('heightCm').value) || 30;
+  const stg = parseFloat(document.getElementById('stg').value) || 18;
+  const rowg = parseFloat(document.getElementById('rowg').value) || 20;
+  const nColors = parseInt(document.getElementById('colorCount').value) || 8;
+
+  let gridW = Math.round(widthCm * stg / 10);
+  let gridH = Math.round(heightCm * rowg / 10);
+  gridW = Math.max(6, Math.min(MAX_GRID_W, gridW));
+  gridH = Math.max(6, Math.min(MAX_GRID_H, gridH));
+
+  // Кадрируем фото под нужные пропорции и уменьшаем до размера сетки
+  const img = photo.img;
+  const targetRatio = gridW / gridH;
+  const srcRatio = img.naturalWidth / img.naturalHeight;
+  let sx=0, sy=0, sw=img.naturalWidth, sh=img.naturalHeight;
+  if(srcRatio > targetRatio){
+    sw = Math.round(img.naturalHeight * targetRatio);
+    sx = Math.round((img.naturalWidth - sw) / 2);
+  } else {
+    sh = Math.round(img.naturalWidth / targetRatio);
+    sy = Math.round((img.naturalHeight - sh) / 2);
+  }
+
+  const smallCanvas = document.createElement('canvas');
+  smallCanvas.width = gridW; smallCanvas.height = gridH;
+  const sctx = smallCanvas.getContext('2d');
+  sctx.imageSmoothingEnabled = true;
+  sctx.imageSmoothingQuality = 'high';
+  sctx.drawImage(img, sx, sy, sw, sh, 0, 0, gridW, gridH);
+  const imageData = sctx.getImageData(0,0,gridW,gridH).data;
+
+  const pixels = [];
+  for(let i=0;i<gridW*gridH;i++){
+    pixels.push([imageData[i*4], imageData[i*4+1], imageData[i*4+2]]);
+  }
+
+  const { centers, assignments } = kMeansQuantize(pixels, nColors, 6);
+
+  gridData = { w: gridW, h: gridH, indices: assignments, palette: centers };
+
+  const personalizeText = (document.getElementById('personalizeText').value || '').trim();
+  if(personalizeText){
+    stampTextBand(gridData, personalizeText);
+  }
+
+  // Рисуем превью-схему на экране
+  const cellPx = Math.max(4, Math.min(16, Math.floor(700 / gridW)));
+  const canvas = document.getElementById('chart-canvas');
+  canvas.width = gridW * cellPx;
+  canvas.height = gridH * cellPx;
+  const ctx = canvas.getContext('2d');
+  for(let y=0;y<gridH;y++){
+    for(let x=0;x<gridW;x++){
+      const idx = gridData.indices[y*gridW+x];
+      const c = gridData.palette[idx];
+      ctx.fillStyle = `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+      ctx.fillRect(x*cellPx, y*cellPx, cellPx, cellPx);
+    }
+  }
+  document.getElementById('chart-wrap').style.display = 'block';
+
+  // Статистика
+  document.getElementById('stats').style.display = 'grid';
+  document.getElementById('stat-grid').textContent = gridW + '×' + gridH;
+  document.getElementById('stat-colors').textContent = gridData.palette.length;
+  document.getElementById('stat-stitches').textContent = (gridW*gridH).toLocaleString('ru-RU');
+
+  // Легенда
+  const counts = new Array(gridData.palette.length).fill(0);
+  gridData.indices.forEach(a => counts[a]++);
+  const order = counts.map((c,i)=>i).sort((a,b)=>counts[b]-counts[a]);
+  const legendGrid = document.getElementById('legend-grid');
+  legendGrid.innerHTML = order.map((idx,pos) => {
+    const c = gridData.palette[idx];
+    const hex = rgbToHex(c[0],c[1],c[2]);
+    const name = nearestYarnColorName(hex);
+    return '<div class="legend-item"><span class="legend-swatch" style="background:'+hex+'"></span>'+(pos+1)+'. '+name+' <span style="color:var(--ink-2);">('+hex+')</span></div>';
+  }).join('');
+  document.getElementById('legend-section').style.display = 'block';
+
+  document.getElementById('pdf-section').style.display = 'block';
+  statusEl.textContent = '';
+});
+
+// ВНУТРЕННЯЯ ВЕРСИЯ — оплата не требуется, скачивание сразу.
+
+function buildChartImage(){
+  const canvas = document.createElement('canvas');
+  canvas.width = gridData.w * CHART_CELL_PX;
+  canvas.height = gridData.h * CHART_CELL_PX;
+  const ctx = canvas.getContext('2d');
+  for(let y=0;y<gridData.h;y++){
+    for(let x=0;x<gridData.w;x++){
+      const idx = gridData.indices[y*gridData.w+x];
+      const c = gridData.palette[idx];
+      ctx.fillStyle = `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+      ctx.fillRect(x*CHART_CELL_PX, y*CHART_CELL_PX, CHART_CELL_PX, CHART_CELL_PX);
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x*CHART_CELL_PX+0.5, y*CHART_CELL_PX+0.5, CHART_CELL_PX-1, CHART_CELL_PX-1);
+    }
+  }
+  return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+}
+
+function buildPdfPayload(){
+  const widthCm = parseFloat(document.getElementById('widthCm').value) || 30;
+  const heightCm = parseFloat(document.getElementById('heightCm').value) || 30;
+  const stg = parseFloat(document.getElementById('stg').value) || 18;
+  const rowg = parseFloat(document.getElementById('rowg').value) || 20;
+  const counts = new Array(gridData.palette.length).fill(0);
+  gridData.indices.forEach(a => counts[a]++);
+  const order = counts.map((c,i)=>i).sort((a,b)=>counts[b]-counts[a]);
+  const palette = order.map(idx => rgbToHex(gridData.palette[idx][0], gridData.palette[idx][1], gridData.palette[idx][2]));
+  const paletteNames = palette.map(hex => nearestYarnColorName(hex));
+
+  return {
+    lang: 'ru',
+    title: 'Схема мозаичного вязания',
+    widthCm, heightCm, stg, rowg,
+    gridW: gridData.w, gridH: gridData.h,
+    palette,
+    paletteNames,
+    chartImageBase64: buildChartImage(),
+    chartCellPx: CHART_CELL_PX,
+    personalizeBandRows: gridData.personalizeBandRows || 0,
+    photoBase64: photo ? photo.base64 : null,
+    photoMediaType: photo ? photo.mediaType : null
+  };
+}
+
+async function downloadPdf(payload, statusNode){
+  statusNode.textContent = 'Собираем PDF...';
+  const response = await fetch('/api/generate-mosaic-pdf', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(!response.ok){
+    const err = await response.json().catch(()=>({error:'HTTP '+response.status}));
+    throw new Error(err.error || ('HTTP '+response.status));
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'mosaic-pattern.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  statusNode.textContent = '';
+}
+
+document.getElementById('generate-pdf-btn').addEventListener('click', async function(){
+  const payload = buildPdfPayload();
+  const pdfStatus = document.getElementById('pdf-status');
+  document.getElementById('pdf-section').style.display = 'block';
+  try{
+    await downloadPdf(payload, pdfStatus);
+  }catch(err){
+    pdfStatus.textContent = 'Ошибка: ' + err.message;
+  }
+});
+</script>
+</body>
+</html>
