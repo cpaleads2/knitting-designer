@@ -124,6 +124,7 @@
     <label for="personalizeText">Имя или короткий текст на изделии (необязательно)</label>
     <input type="text" id="personalizeText" maxlength="16" placeholder="" />
     <p class="note">Текст впишется отдельной полосой прямо в схему (как на пледах с именем) — не отдельной вышивкой, а частью самого вязания.</p>
+    <div class="warn-banner" id="text-legibility-warning" style="display:none; margin-top:10px;"><span class="icon">⚠️</span><span>Для такой длины текста и ширины изделия буквы могут получиться нечёткими — попробуйте текст короче или увеличьте ширину изделия.</span></div>
   </div>
 
   <button class="btn-primary" id="build-btn" disabled>Собрать схему</button>
@@ -150,7 +151,7 @@
 
 <script>
 const MAX_GRID_W = 130, MAX_GRID_H = 170; // разумный предел, чтобы PDF и рендер не были неподъёмными
-const CHART_CELL_PX = 36; // размер клетки в экспортируемом PNG для PDF (даёт хорошее качество при печати)
+const CHART_CELL_PX = 20; // размер клетки в экспортируемом изображении для PDF — этого достаточно для чёткой печати, но не раздувает размер файла на больших пледах
 
 let photo = null; // {base64, mediaType, img}
 let gridData = null; // {w, h, indices:[...], palette:[[r,g,b],...]}
@@ -276,9 +277,13 @@ function nearestYarnColorName(hex){
 // до размера сетки, чтобы буквы получились максимально чёткими на грубой сетке столбиков.
 function stampTextBand(gridData, text){
   const { w, h } = gridData;
-  const bandRows = Math.max(7, Math.round(h * 0.15));
+  const neededWidthPerChar = w / Math.max(1, text.length);
+  let heightFrac = 0.14;
+  if(neededWidthPerChar < 10) heightFrac = 0.14 + Math.min(0.14, (10 - neededWidthPerChar) * 0.02);
+  const bandRows = Math.max(7, Math.round(h * heightFrac));
   const bandStartRow = h - bandRows;
   const renderScale = 10;
+  gridData.legibilityWarning = neededWidthPerChar < 6.5;
 
   const big = document.createElement('canvas');
   big.width = w * renderScale;
@@ -374,6 +379,12 @@ document.getElementById('build-btn').addEventListener('click', function(){
   const personalizeText = (document.getElementById('personalizeText').value || '').trim();
   if(personalizeText){
     stampTextBand(gridData, personalizeText);
+  }
+  const textWarnEl = document.getElementById('text-legibility-warning');
+  if(personalizeText && gridData.legibilityWarning){
+    textWarnEl.style.display = 'flex';
+  } else {
+    textWarnEl.style.display = 'none';
   }
 
   // Рисуем превью-схему на экране
@@ -483,13 +494,15 @@ async function downloadPdf(payload, statusNode){
 }
 
 document.getElementById('generate-pdf-btn').addEventListener('click', async function(){
-  const payload = buildPdfPayload();
   const pdfStatus = document.getElementById('pdf-status');
   document.getElementById('pdf-section').style.display = 'block';
+  pdfStatus.textContent = 'Готовим данные...';
   try{
+    const payload = buildPdfPayload();
     await downloadPdf(payload, pdfStatus);
   }catch(err){
     pdfStatus.textContent = 'Ошибка: ' + err.message;
+    console.error(err);
   }
 });
 </script>
