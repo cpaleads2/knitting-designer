@@ -176,14 +176,20 @@ function reencodeToJpeg(file){
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
+      const MAX_DIM = 1200;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if(Math.max(w,h) > MAX_DIM){
+        const scale = MAX_DIM / Math.max(w,h);
+        w = Math.round(w*scale); h = Math.round(h*scale);
+      }
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.drawImage(img,0,0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      ctx.drawImage(img,0,0,w,h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       resolve({ base64: dataUrl.split(',')[1], mediaType:'image/jpeg', dataUrl, img });
     };
     img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('decode failed')); };
@@ -210,8 +216,28 @@ function kMeansQuantize(pixels, k, iterations){
   const n = pixels.length;
   k = Math.min(k, n);
   let centers = [];
-  for(let i=0;i<k;i++){
-    centers.push(pixels[Math.floor(i * n / k)].slice());
+  centers.push(pixels[Math.floor(Math.random() * n)].slice());
+  for(let c = 1; c < k; c++){
+    const distances = new Array(n);
+    let sum = 0;
+    for(let i=0;i<n;i++){
+      const p = pixels[i];
+      let minD = Infinity;
+      for(const center of centers){
+        const dr=p[0]-center[0], dg=p[1]-center[1], db=p[2]-center[2];
+        const d = dr*dr+dg*dg+db*db;
+        if(d<minD) minD=d;
+      }
+      distances[i] = minD;
+      sum += minD;
+    }
+    if(sum <= 0){
+      centers.push(pixels[Math.floor(Math.random()*n)].slice());
+      continue;
+    }
+    let r = Math.random() * sum, idx = 0;
+    for(; idx<n; idx++){ r -= distances[idx]; if(r<=0) break; }
+    centers.push(pixels[Math.min(idx, n-1)].slice());
   }
   let assignments = new Array(n).fill(0);
   for(let it=0; it<iterations; it++){
